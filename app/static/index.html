@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ragsec-lab</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; background:#111; color:#eee; }
+  h1 { font-size: 1.3rem; }
+  .row { display:flex; gap:.5rem; }
+  input { flex:1; padding:.7rem; border-radius:6px; border:1px solid #444; background:#1c1c1c; color:#eee; font-size:1rem; }
+  button { padding:.7rem 1.2rem; border-radius:6px; border:0; background:#3b82f6; color:#fff; font-size:1rem; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:wait; }
+  .card { margin-top:1rem; padding:1rem; border:1px solid #333; border-radius:8px; background:#181818; }
+  .label { font-size:.75rem; color:#9ca3af; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.3rem; }
+  pre { margin:0; white-space:pre-wrap; word-break:break-word; font-family:Consolas,monospace; font-size:.9rem; }
+  .q { color:#9ca3af; margin-bottom:.6rem; }
+</style>
+</head>
+<body>
+<h1>ragsec-lab: GraphRAG security lab</h1>
+<p style="color:#9ca3af">Synthetic data only. Runs locally.</p>
+<div class="row">
+  <input id="q" placeholder="Ask a question about the infrastructure graph..." autofocus>
+  <button id="go">Ask</button>
+</div>
+<div id="out"></div>
+
+<script>
+const input = document.getElementById("q");
+const btn = document.getElementById("go");
+const out = document.getElementById("out");
+
+function block(label, text) {
+  const wrap = document.createElement("div");
+  wrap.style.marginTop = ".8rem";
+  const l = document.createElement("div");
+  l.className = "label";
+  l.textContent = label;
+  const p = document.createElement("pre");
+  p.textContent = text;           // textContent on purpose: model output is never rendered as HTML
+  wrap.append(l, p);
+  return wrap;
+}
+
+async function ask() {
+  const question = input.value.trim();
+  if (!question) return;
+  btn.disabled = true;
+  const card = document.createElement("div");
+  card.className = "card";
+  const qEl = document.createElement("div");
+  qEl.className = "q";
+  qEl.textContent = "Q: " + question;
+  card.append(qEl);
+  out.prepend(card);
+  try {
+    const r = await fetch("/ask", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ question })
+    });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const d = await r.json();
+    card.append(block("Answer", d.answer ?? "(none)"));
+    card.append(block("Generated Cypher", d.generated_cypher ?? "(none)"));
+    card.append(block("Database result", JSON.stringify(d.db_context, null, 2)));
+  } catch (e) {
+    card.append(block("Error", String(e)));
+  }
+  btn.disabled = false;
+  input.value = "";
+  input.focus();
+}
+btn.addEventListener("click", ask);
+input.addEventListener("keydown", e => { if (e.key === "Enter") ask(); });
+</script>
+</body>
+</html>

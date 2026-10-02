@@ -1,0 +1,26 @@
+services:
+  api:
+    build: ./app
+    container_name: ragsec-api
+    env_file: .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  # Yerel Neo4j sadece istenirse çalışır: docker compose --profile local up -d
+  # Aura kullanırken buna gerek yok.
+  neo4j:
+    profiles: ["local"]
+    image: neo4j:5
+    container_name: ragsec-neo4j
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD}
+    ports:
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
+    volumes:
+      - neo4j_data:/data
+
+volumes:
+  neo4j_data:
