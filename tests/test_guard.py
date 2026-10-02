@@ -26,6 +26,12 @@ BLOCKED = [
     "MATCH (h:Host)-[:RUNS]->(c) RETURN c",
     "MERGE (c:Container {name: 'x'})",
     "LOAD CSV FROM 'http://x/y.csv' AS row RETURN row",
+    "SHOW DATABASES",
+    "SHOW CURRENT USER",
+    "TERMINATE TRANSACTIONS 'x'",
+    "RETURN 1",
+    "MATCH (c:Container) RETURN apoc.version()",
+    "MATCH (c:Container) RETURN c.name, [p IN c.ports | p]",
     "",
 ]
 fails = 0

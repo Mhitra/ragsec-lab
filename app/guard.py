@@ -18,6 +18,8 @@ _STRING_OR_COMMENT = re.compile(
 )
 _MAP = re.compile(r"\{[^{}]*\}")
 _TYPE_AFTER_COLON = re.compile(r":\s*([A-Za-z_]\w*)")
+_START = re.compile(r"(?is)^(OPTIONAL\s+)?MATCH\b")
+_NAMESPACED_FUNCTION = re.compile(r"[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)+\s*\(")
 _NODE_PATTERN = re.compile(
     r"(?<![\w])\(\s*([A-Za-z_]\w*)?\s*((?::\s*[A-Za-z_]\w*\s*)*)\)"
 )
@@ -47,8 +49,12 @@ def check_query(query: str):
     s = s.strip().rstrip(";").strip()
     if ";" in s:
         return "multiple statements are not allowed"
+    if not _START.match(s):
+        return "query must start with MATCH"
+    if _NAMESPACED_FUNCTION.search(s):
+        return "namespaced function calls are not allowed"
     if "|" in s:
-        return "relationship type alternation is not allowed"
+        return "the pipe character is not allowed (relationship alternation or list comprehension)"
 
     words = {w.upper() for w in re.findall(r"[A-Za-z_]+", s)}
     bad = sorted(words & FORBIDDEN_KEYWORDS)
