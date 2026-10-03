@@ -11,6 +11,11 @@ All data in this lab is synthetic.
 
 **Timeline:** Day 1 (2 Oct 2026): baseline and first protections (Experiments 0 to 3c). Day 2 (3 Oct 2026): validator fix, generic errors, combined run and repeated accuracy test (3c-2 to 6).
 
+## Related work
+- Pedro et al., "From Prompt Injections to SQL Injection Attacks" (arXiv:2308.01990; ICSE 2025 as "Prompt-to-SQL Injections in LLM-Integrated Web Applications: Risks and Defenses"): prompt-to-SQL attacks on LangChain applications across several LLMs, with proposed defenses.
+- Szlobodnyik, "Feedback-Guided Prompt Injection Defense in Retrieval-Augmented Text-to-Cypher Generation" (Analytics, MDPI): direct prompt injection against text-to-Cypher systems, evaluated on large models.
+- This lab differs in scope, not in idea: small local models, a read-only session on Neo4j Aura, a string-level allowlist validator, and a measured accuracy effect of prompt changes. It is a small replication and extension, not a new attack class.
+
 ## Experiment template
 - Date:
 - Hypothesis:
