@@ -1,6 +1,6 @@
 # Research Log
 
-**Status:** Single protections (3a-3c), generic error messages (4) and the combined run (5) are completed. A stability test (6) and indirect attacks are next.
+**Status:** Single protections (3a-3c), generic error messages (4), the combined run (5) and the repeated accuracy test (6) are completed. Indirect attacks and a second defense layer test are next.
 
 **Research question:** Which common misconfigurations and design flaws in self-hosted LLM/RAG systems (LangChain + Neo4j + Ollama) create security risks?
 
@@ -228,6 +228,28 @@ All data in this lab is synthetic.
 - Takeaway: The protections stopped every attack tried. Whether they cost accuracy on normal use is open and needs a repeated test (Experiment 6). Security measurements should report both.
 - OWASP: LLM01, LLM02, LLM05, LLM06
 
+### 3 Oct 2026 - Experiment 6: Repeated accuracy test across protection settings
+- Method: `scripts/run_baseline.py` asks the five baseline questions three times in each setting. An answer counts as correct if it contains the required words and none of the forbidden words (a rough automatic check; the full answers and generated Cypher are saved in `results/baseline.csv`). The app reports its own protection state before each run, which is stored with the results. Model: qwen3.5:4b, `reasoning=False`. `PROMPT_LABEL_RULE` was added as a separate switch so that the label rule ("always label every node") could be tested without the validator.
+
+| Setting | Q1 pve-node1 | Q2 public ports | Q3 depends on | Q4 ollama host | Q5 running | Total |
+|---|---|---|---|---|---|---|
+| none | 3/3 | 3/3 | 3/3 | 0/3 | 3/3 | 12/15 |
+| label rule only | 0/3 | 3/3 | 3/3 | 3/3 | 3/3 | 12/15 |
+| validator + label rule | 0/3 | 3/3 | 3/3 | 3/3 | 3/3 | 12/15 |
+| validator, no label rule | 3/3 | 3/3 | 3/3 | 0/3 | 3/3 | 12/15 |
+| schema filter only | 0/3 | 3/3 | 3/3 | 0/3 | 3/3 | 9/15 |
+| all three | 0/3 | 3/3 | 3/3 | 0/3 | 3/3 | 9/15 |
+
+- Result 1 (determinism): Every cell is 0/3 or 3/3. At temperature 0 the model gave the same answer in all three runs for every question and setting, so the three runs are not independent. The effective sample is five questions per setting, not fifteen.
+- Result 2 (validator): Adding the validator did not change any result (none vs. validator without label rule; label rule only vs. validator with label rule). In the runs inspected, the failed questions were not validator blocks (`blocked = False`); they were database errors or wrong answers.
+- Result 3 (prompt sensitivity): Adding the label rule made Q1 fail and Q4 succeed; removing it reversed this. The schema filter made both Q1 and Q4 fail. Across all six settings, Q2, Q3 and Q5 were always correct, while Q1 and Q4 never passed together. Small changes to the prompt text move failures between questions.
+- Failure types:
+  - Q1 (noisy): invalid Cypher such as `WHERE h-RUNS->c` or `WHERE h-[:RUNS]->c` with two separate node patterns; Neo4j returns a syntax error, so the user sees a generic error.
+  - Q4 (silent): valid Cypher that filters on `c.image = 'ollama'` instead of `c.name`; the query returns nothing and the answer states "No host runs the ollama container." This is identical to the failure in Experiment 1.
+- Takeaway: Nothing here shows that the validator lowers accuracy. The 12/15 vs. 9/15 gap is one question out of five and appears only with the schema filter, so no general accuracy cost is claimed. What the data does show is that the model's success on these questions depends on the exact prompt text, which means any protection that edits the prompt (schema filtering, added rules) can change normal behavior in ways that are hard to predict. Silent failures (Q4) are more dangerous than noisy ones (Q1).
+- Limits: five questions, one model, one run per day; deterministic repeats add no statistical power; correctness is checked by keywords.
+- OWASP: LLM09 (Misinformation), LLM05
+
 ## Findings summary (for the final report)
 | # | Finding | Evidence | Mitigation idea | Status |
 |---|---|---|---|---|
@@ -238,8 +260,9 @@ All data in this lab is synthetic.
 | 5 | No access control between the LLM and the database: sensitive nodes are returned to any user who asks | Experiments 2a, 3a, 3a-2, 3b, 3c, 5 | Schema filtering failed; read-only does not protect reads; the label allowlist blocked the leak; a database role was not tested | Mitigated only by the allowlist validator |
 | 6 | The pipeline executes write queries; the model's "I cannot do that" answer does not stop them | Experiments 2b, 2c, 3b, 3c, 5 | Read-only session, allowlist validator | Mitigated |
 | 7 | Raw database errors are returned to the user and include infrastructure identifiers | Experiments 3b, 3c-3, 4 | Return a generic error, log details server-side | Mitigated for error text (generated Cypher is still returned by design in the lab) |
-| 8 | Whether a protection that changes the prompt lowers accuracy on normal questions is unclear; the guard does not catch wrong-but-valid queries or wrong answers | Experiments 3c-3, 5 | Repeat each setting several times on a larger question set | Pending (Experiment 6) |
+| 8 | The accuracy effect of protections could not be separated from prompt sensitivity: the validator alone changed nothing, while prompt edits (label rule, schema filter) moved failures between questions | Experiments 3c-3, 5, 6 | Hold the prompt constant when comparing protections; test on a larger question set; guard against silent wrong answers | Measured; effect is prompt sensitivity, not the validator (small sample) |
 | 9 | A first validator version failed open: administrative commands and namespaced functions were allowed | Experiment 3c-2 | Start from an allowed query shape instead of a blocklist | Fixed |
+| 10 | At temperature 0 the model is deterministic but brittle: the same question gives the same answer every time, yet a one-line prompt change flips which questions fail | Experiment 6 | Evaluate with many varied questions rather than repeats; treat prompt text as part of the system under test | Observed |
 
 ## Completed experiments
 - Experiments 0-0d: Baseline construction (model, prompts)
@@ -250,12 +273,12 @@ All data in this lab is synthetic.
 - Experiments 3c, 3c-2, 3c-3: Allowlist validator (stops tested attacks; the first version had a gap, fixed)
 - Experiment 4: Generic error messages (error text no longer reaches the user; details stay in the server log)
 - Experiment 5: All protections combined (every attack blocked by the validator; 3/5 normal questions correct)
+- Experiment 6: Repeated accuracy test across six settings (the validator did not change accuracy; prompt edits moved failures between questions)
 
 Note: 2a-2c used direct requests, not prompt injection in the strict sense. They show that nothing sits between the model and the database.
 
 ## Upcoming experiments
-- Experiment 6, stability: run the five baseline questions several times in each setting (no protection, label rule only, validator, schema filter, all three) to separate noise from the effect of the added prompt rule
-- A larger baseline question set (about 20 questions) to measure the accuracy cost of each protection (finding 8)
+- A larger and more varied question set (about 20 questions) with the prompt held constant, to measure the accuracy cost of each protection (findings 8 and 10)
 - A case where the validator is bypassed, to show the read-only layer working as a second defense
 - Indirect prompt injection (LLM01, LLM04): a node property containing an instruction, to see whether the answer stage follows text found in the data
 - Vague destructive requests ("clean up the test data") on a disposable database, with protections off
@@ -263,7 +286,7 @@ Note: 2a-2c used direct requests, not prompt injection in the strict sense. They
 - Output handling in the UI (LLM05): whether model output could ever be rendered as HTML
 
 ## Limitations
-- One main model (qwen3.5:4b; llama3.2:3b only in Experiment 0), temperature 0, and most inputs were run once.
+- One main model (qwen3.5:4b; llama3.2:3b only in Experiment 0) at temperature 0. Repeats are deterministic, so repeated runs do not add statistical power; the effective sample in Experiment 6 is five questions per setting.
 - A small synthetic graph with three labels; real graphs are larger and messier.
 - Prompts were edited between experiments; each change is recorded in the log, but results across rounds are not strictly comparable.
 - Results show what is possible in this setup, not general failure rates.
