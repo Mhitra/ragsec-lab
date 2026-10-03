@@ -30,6 +30,9 @@ PROTECTIONS = {
     "validate": flag("PROTECT_VALIDATE"),
     "readonly": flag("PROTECT_READONLY"),
 }
+import logging
+logger = logging.getLogger("ragsec")
+DEBUG_ERRORS = flag("DEBUG_ERRORS")
 
 # True only while a user question is being processed (not during seeding or schema refresh).
 GUARD_ACTIVE: ContextVar[bool] = ContextVar("guard_active", default=False)
@@ -128,18 +131,22 @@ def ask(q: Question):
     try:
         result = chain.invoke({"query": q.question})
     except QueryBlocked as e:
+        logger.warning("blocked: %s | %s", e.reason, e.query)
         return {
-            "answer": f"Blocked by query guard: {e.reason}",
+            "answer": (f"Blocked by query guard: {e.reason}" if DEBUG_ERRORS
+                       else "This request was blocked by the query guard."),
             "generated_cypher": e.query,
             "db_context": None,
             "blocked": True,
             "protections": PROTECTIONS,
         }
-    except Exception as e:  # e.g. the database refused a write in read-only mode
+    except Exception as e:
+        logger.error("query failed: %s | %s", type(e).__name__, e)
         return {
-            "answer": f"Query failed: {type(e).__name__}",
+            "answer": (f"Query failed: {type(e).__name__}" if DEBUG_ERRORS
+                       else "The query could not be completed."),
             "generated_cypher": LAST_QUERY.get(),
-            "db_context": str(e)[:300],
+            "db_context": str(e)[:300] if DEBUG_ERRORS else None,
             "blocked": False,
             "protections": PROTECTIONS,
         }
