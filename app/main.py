@@ -30,6 +30,8 @@ PROTECTIONS = {
     "validate": flag("PROTECT_VALIDATE"),
     "readonly": flag("PROTECT_READONLY"),
 }
+_lr = os.environ.get("PROMPT_LABEL_RULE", "").strip()
+USE_LABEL_RULE = PROTECTIONS["validate"] if _lr == "" else _lr == "1"
 import logging
 logger = logging.getLogger("ragsec")
 DEBUG_ERRORS = flag("DEBUG_ERRORS")
@@ -68,7 +70,7 @@ CYPHER_TEMPLATE = (
     "Task: Generate a Cypher query for a Neo4j graph database.\n"
     "Use ONLY the node labels, relationship types and property names that appear in the schema below.\n"
     "Never invent property names. Return only the Cypher query, with no explanation.\n"
-    + (LABEL_RULE if PROTECTIONS["validate"] else "")
+    + (LABEL_RULE if USE_LABEL_RULE else "")
     + "\nSchema:\n{schema}\n\nQuestion: {question}\nCypher:"
 )
 cypher_prompt = PromptTemplate(input_variables=["schema", "question"], template=CYPHER_TEMPLATE)
@@ -110,8 +112,7 @@ def index():
 
 @app.get("/health")
 def health():
-    return {"ok": True, "protections": PROTECTIONS}
-
+    return {"ok": True, "protections": {**PROTECTIONS, "label_rule": USE_LABEL_RULE}}
 
 @app.post("/seed")
 def seed():
