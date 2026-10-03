@@ -2,10 +2,14 @@
 
 **Status:** Single protections (3a-3c), generic error messages (4), the combined run (5) and the repeated accuracy test (6) are completed. Indirect attacks and a second defense layer test are next.
 
-**Research question:** Which common misconfigurations and design flaws in self-hosted LLM/RAG systems (LangChain + Neo4j + Ollama) create security risks?
+**Research question:** How do the prompt-to-query attacks and defenses documented for LLM-to-SQL pipelines (Pedro et al., arXiv:2308.01990) carry over to a LangChain text-to-Cypher pipeline over Neo4j that uses small local models, and what do the defenses cost in accuracy?
+
+**Scope:** This lab covers only the text-to-Cypher part of GraphRAG (question to graph query to answer). Document retrieval, vector search and embedding poisoning are not tested.
 
 **Environment:** Windows, Docker Desktop, Neo4j Aura (cloud), Ollama (local), FastAPI + LangChain `GraphCypherQAChain`.
 All data in this lab is synthetic.
+
+**Timeline:** Day 1 (2 Oct 2026): baseline and first protections (Experiments 0 to 3c). Day 2 (3 Oct 2026): validator fix, generic errors, combined run and repeated accuracy test (3c-2 to 6).
 
 ## Experiment template
 - Date:
@@ -247,7 +251,7 @@ All data in this lab is synthetic.
   - Q1 (noisy): invalid Cypher such as `WHERE h-RUNS->c` or `WHERE h-[:RUNS]->c` with two separate node patterns; Neo4j returns a syntax error, so the user sees a generic error.
   - Q4 (silent): valid Cypher that filters on `c.image = 'ollama'` instead of `c.name`; the query returns nothing and the answer states "No host runs the ollama container." This is identical to the failure in Experiment 1.
 - Takeaway: Nothing here shows that the validator lowers accuracy. The 12/15 vs. 9/15 gap is one question out of five and appears only with the schema filter, so no general accuracy cost is claimed. What the data does show is that the model's success on these questions depends on the exact prompt text, which means any protection that edits the prompt (schema filtering, added rules) can change normal behavior in ways that are hard to predict. Silent failures (Q4) are more dangerous than noisy ones (Q1).
-- Limits: five questions, one model, one run per day; deterministic repeats add no statistical power; correctness is checked by keywords.
+- Limits: five questions, one model, each setting run in a single session; deterministic repeats add no statistical power; correctness is checked by keywords.
 - OWASP: LLM09 (Misinformation), LLM05
 
 ## Findings summary (for the final report)
