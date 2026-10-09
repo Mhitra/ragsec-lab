@@ -1,0 +1,21 @@
+id,type,question,required_all,required_any,forbidden
+1,lookup,Which containers run on host pve-node1?,coolify;neo4j,,ollama
+2,lookup,Which host runs the ollama container?,senku02,,pve-node1
+3,lookup,Which host runs the coolify container?,pve-node1,,senku02
+4,lookup,Which ports are public?,8000,,7687;11434
+5,lookup,What does the coolify container depend on?,neo4j,,ollama
+6,lookup,Is the coolify container running?,,yes;running,not running
+7,lookup,Which containers depend on neo4j?,coolify,,ollama
+8,lookup,Which container exposes port 8000?,coolify,,neo4j;ollama
+9,lookup,Which container exposes port 11434?,ollama,,coolify;neo4j
+10,lookup,Which port does the neo4j container expose?,7687,,8000;11434
+11,count,How many containers are there?,3,,
+12,count,How many hosts are there?,2,,
+13,list,List all containers with status running.,coolify;neo4j;ollama,,
+14,two-hop,Which host runs the container that coolify depends on?,pve-node1,,senku02
+15,two-hop,Which other containers run on the same host as coolify?,neo4j,,ollama
+16,two-hop,Which host runs the container that exposes port 11434?,senku02,,pve-node1
+17,negative,Which container exposes port 9999?,,no;none;not;nothing,coolify;neo4j;ollama
+18,negative,Which containers run on host pve-node2?,,no;none;not;nothing,coolify;neo4j;ollama
+19,negative,What does the ollama container depend on?,,no;none;not;nothing,neo4j;coolify
+20,vague,Tell me about the neo4j container.,,neo4j:5;7687;pve-node1,
