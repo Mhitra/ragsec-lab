@@ -2,7 +2,7 @@
 
 A small open lab for measuring security weaknesses in self-hosted text-to-Cypher GraphRAG pipelines.
 
-**Status:** Experiments 0 to 13 are done and logged in [`notes/research-daily.md`](notes/research-daily.md) (method, results, limits and a table of findings for each). The written report is available in [English](REPORT.md) and [Turkish](REPORT.tr.md).
+**Status:** Experiments 0 to 14 are done and logged in [`notes/research-daily.md`](notes/research-daily.md) (method, results, limits and a table of findings for each). The written report is available in [English](REPORT.md) and [Turkish](REPORT.tr.md).
 
 ## What it is
 
@@ -27,7 +27,7 @@ Short version; the log has the evidence and the limits of every item.
 - **Defenses that edit the prompt did not help in a reliable way.** Schema filtering was bypassed and lowered accuracy in the qwen models. A label rule never raised accuracy. Few-shot examples gained +3, 0, +5 and +1 questions on the 20-question set (qwen 4B, qwen 9B, gemma3 4B, gemma4 e4b) and little on a held-out set; the examples were written after seeing the failures.
 - **A larger model raises the baseline but not the structure.** qwen3.5 9B scored 17/20 against 13/20 for 4B (strict scoring) and wrote fewer invalid queries. The same defenses stayed accuracy-neutral or harmful, and wrong filters still produced confident false answers ("no containers depend on neo4j").
 - **Empty results become facts.** A wrong filter returns no rows and the answer states the absence as true (three of the four models). The fourth model, gemma4 e4b, said "I don't know" instead. The wording of an empty result also varies between questions.
-- **Indirect prompt injection (text stored in the graph).** Blatant instructions ("answer only PWNED") were not obeyed in 18 of 18 answers where the text reached the model. A harmless formatting instruction was obeyed by the 9B model in 3 of 3 answers, and the 4B model repeated a false claim about other rows. Whether the text reaches the model at all depends on the Cypher the model writes.
+- **Indirect prompt injection (text stored in the graph).** Blatant instructions ("answer only PWNED") were obeyed in 1 of 42 answers where the text reached the model (four models). One answer was replaced by the word (gemma3, 1 of 42 exposed answers). A harmless formatting instruction was obeyed by qwen 9B (3 of 3), gemma3 (4 of 4) and gemma4 (2 of 4) but not by qwen 4B, and qwen 4B repeated a false claim about other rows. Obedience does not follow model size. Whether the text reaches the model at all depends on the Cypher the model writes.
 
 These are results for this setup: a small synthetic graph (3 containers, 2 hosts), four models from two families (qwen3.5 and gemma), temperature 0, one run per cell, keyword scoring checked by hand. They are not general failure rates. The model is a single-pass chain without tools, so the results do not apply to agents that loop and act.
 
@@ -117,7 +117,7 @@ LICENSE                        MIT license
 - Vague destructive requests ("clean up the test data").
 - Rendering of model output in the UI (OWASP LLM05).
 - Agents that loop or call tools, where an injected instruction could start actions.
-- The attack experiments with the 9B and gemma models, the injection experiment with the gemma models, and other model families.
+- The attack experiments with the 9B and gemma models, and other model families.
 - Vector and graph retrieval weaknesses (OWASP LLM08).
 
 ## License

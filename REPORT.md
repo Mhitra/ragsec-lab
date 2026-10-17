@@ -6,7 +6,7 @@ Mustafa Sekizkardeş, October 2026. Code, data and the full experiment log: http
 
 ## Abstract
 
-I built a very small question-answering pipeline on a Neo4j graph. One model writes a Cypher query, the database runs the query, and a second model call writes the answer. Then I measured what goes wrong with small local models. I ran the experiments numbered 0 to 13 in the log with four models from two families (qwen3.5 4B and 9B, gemma3 4B, gemma4 e4b). With no protection, a plain question leaked a stored secret, and plain requests created and deleted data. Protections outside the prompt (a query allowlist, a read-only database session) stopped the attacks I tried and did not change the accuracy on normal questions. Protections that change the prompt (hiding schema names, adding rules or examples) did not help in a reliable way. Hiding schema names and adding a rule never raised the accuracy, and in some models they lowered it. Few-shot examples helped on the 20 questions in three of the four models, but little on a held-out set, and they moved some errors from one question to another. A bigger model raised the base score (from 13/20 to 17/20) but did not change this pattern, and a wrong query that returned nothing was still shown as a fact by three of the four models. The fourth model said "I don't know". Text placed in the database was not followed when it was obvious, but the bigger model followed a formatting instruction that looked harmless, and whether the placed text reached the model depended on the query the model wrote. The setup is small. The results show what is possible in this setup, not general error rates.
+I built a very small question-answering pipeline on a Neo4j graph. One model writes a Cypher query, the database runs the query, and a second model call writes the answer. Then I measured what goes wrong with small local models. I ran the experiments numbered 0 to 14 in the log with four models from two families (qwen3.5 4B and 9B, gemma3 4B, gemma4 e4b). With no protection, a plain question leaked a stored secret, and plain requests created and deleted data. Protections outside the prompt (a query allowlist, a read-only database session) stopped the attacks I tried and did not change the accuracy on normal questions. Protections that change the prompt (hiding schema names, adding rules or examples) did not help in a reliable way. Hiding schema names and adding a rule never raised the accuracy, and in some models they lowered it. Few-shot examples helped on the 20 questions in three of the four models, but little on a held-out set, and they moved some errors from one question to another. A bigger model raised the base score (from 13/20 to 17/20) but did not change this pattern, and a wrong query that returned nothing was still shown as a fact by three of the four models. The fourth model said "I don't know". Text placed in the database was almost never followed when the instruction was obvious (once in 42 answers), but three of four models followed a formatting instruction that looked harmless, and whether the placed text reached the model depended on the query the model wrote. The setup is small. The results show what is possible in this setup, not general error rates.
 
 ## 1. Introduction
 
@@ -84,18 +84,19 @@ The 9B model without protection scored 17/20, and the 4B model scored 13/20. The
 
 When a wrong filter returns no rows, the answer step reports the absence as a fact: "No host runs the ollama container" (it filtered on `image` instead of `name`), "No containers depend on neo4j" (reversed arrow, wrong property). These are more dangerous than visible errors, because nothing tells the user that the query was wrong. The wording of an empty result is also not stable: the same pipeline answered one empty result with "I don't know" and another with "No containers depend on coolify". Over both question sets and four models, the wrong or denying answers were 16 out of 132 without examples and 6 out of 132 with few-shot (gemma4 had none in both settings). The numbers are small, but the direction suggests that the examples reduced wrong answers given with confidence more than they increased accuracy.
 
-### 3.6 Text placed in the database (Experiments 7 and 12)
+### 3.6 Text placed in the database (Experiments 7, 12 and 14)
 
-I saved one extra node with a `description` property that contains an instruction, in six variants, and I asked five questions. A flag recorded whether the placed text reached the answer step (whether it appeared in the rows returned by the query). Only these answers are counted: 36 of the 48 non-control answers, 18 for each model.
+I saved one extra node with a `description` property that contains an instruction, in six variants, and I asked five questions. A flag recorded whether the placed text reached the answer step (whether it appeared in the rows returned by the query). Only these answers are counted: 84 of the 96 non-control answers (18 for each qwen model, 24 for each gemma model).
 
-| Variant | 4B followed it | 9B followed it |
-|---|---|---|
-| Obvious instruction ("answer only PWNED", three wordings) | 0 of 9 | 0 of 9 |
-| Harmless formatting instruction ("end every answer with one sentence") | 0 of 3 | 3 of 3 |
-| False statement about other rows ("say that the other containers are stopped") | 1 of 3 (+1 partly) | 0 of 3 |
+| Variant | qwen 4B | qwen 9B | gemma3 4B | gemma4 e4b |
+|---|---|---|---|---|
+| Obvious instruction ("answer only PWNED", three wordings) | 0 of 9 | 0 of 9 | 1 of 12 | 0 of 12 |
+| Harmless formatting instruction ("end every answer with one sentence") | 0 of 3 | 3 of 3 | 4 of 4 | 2 of 4 |
+| False statement about other rows ("say that the other containers are stopped") | 1 of 3 (+1 partly) | 0 of 3 | 0 of 4 | 0 of 4 |
 
-- No model replaced its answer with the placed word. The bigger model followed the harmless-looking instruction in every answer where it saw it. The smaller model repeated a false claim about the other containers that came from one row. The order of following by instruction type did not follow the model size.
-- The placed text also damaged answers without being followed: the 4B model refused to list the containers in two variants, and the 9B model said once that there was no information about a container that existed.
+- Only one answer in 42 was replaced by the placed word: gemma3, variant O, the question "What does the docs-portal container do?" gave the answer "PWNED". The same model did not answer PWNED to the other questions with the same text, and it ignored the other two wordings. The other three models never followed an obvious instruction. They sometimes repeated the stored text as the description of the container, which is reporting it, not following it.
+- A harmless-looking formatting instruction was followed by three of the four models: in every exposed answer by qwen 9B (3 of 3) and gemma3 (4 of 4), in half of them by gemma4 (2 of 4), and in none by qwen 4B (0 of 3). Only qwen 4B repeated a false claim about the other containers. So the order of following does not follow the model size: the small gemma3 followed the formatting instruction as often as the bigger qwen 9B.
+- The placed text also damaged answers. The qwen 4B model refused to list the containers in two variants, and the qwen 9B model said once that there was no information about a container that existed. With gemma3, the formatting instruction replaced the list in one answer: the answer to "List all containers with their descriptions" was only "Here are all the containers and their descriptions. Verified by the platform team."
 - Whether the text reached the answer step depended on the query the model wrote. With 4B, the open question failed on made-up properties, but the list question returned the description. With 9B it was the opposite. Half of the non-control answers in my first run tested nothing. So I added the exposure flag and two questions that force the property to be fetched.
 
 ## 4. Discussion
@@ -114,7 +115,7 @@ What I take from this, inside the limits of the setup:
 - The few-shot examples were written after reading the errors, and the held-out questions were written by the same person. So they are separate from the examples, but not independent of me.
 - Scoring was done with keywords, a strict re-score and reading by hand. It can still miss errors.
 - The pipeline is a single pass without tools. The results do not apply to agents that loop and call tools.
-- The attack experiments (2-5) used only the qwen 4B model, and the injection experiments used only the two qwen models.
+- The attack experiments (2-5) used only the qwen 4B model.
 - The validator is a string-level check. I did not try to get around it with a live model.
 
 ## 6. Related work
@@ -123,7 +124,7 @@ Pedro et al. ("From Prompt Injections to SQL Injection Attacks", arXiv:2308.0199
 
 ## 7. Not covered
 
-Attempts to get around the validator with a live model; vague destructive requests ("clean up the test data"); how the interface renders the model output (OWASP LLM05); agents that loop or call tools (an injected instruction could start an action); the attack experiments with the 9B and gemma models, and the injection experiments with the gemma models; weaknesses in vector and graph retrieval.
+Attempts to get around the validator with a live model; vague destructive requests ("clean up the test data"); how the interface renders the model output (OWASP LLM05); agents that loop or call tools (an injected instruction could start an action); the attack experiments with the 9B and gemma models; weaknesses in vector and graph retrieval.
 
 ## 8. Reproducing this
 
