@@ -2,7 +2,7 @@
 
 A small open lab for measuring security weaknesses in self-hosted text-to-Cypher GraphRAG pipelines.
 
-**Status:** Experiments 0 to 12 are done and logged in [`notes/research-daily.md`](notes/research-daily.md) (method, results, limits and a table of findings for each). A short written report is in progress.
+**Status:** Experiments 0 to 12 are done and logged in [`notes/research-daily.md`](notes/research-daily.md) (method, results, limits and a table of findings for each). The written report is available in [English](REPORT.md) and [Turkish](REPORT.tr.md).
 
 ## What it is
 
@@ -105,6 +105,9 @@ questions/                     Question sets and ground truth
 results/                       Raw answers, generated Cypher and scores (CSV)
 tests/test_guard.py            Tests for the validator
 notes/research-daily.md        Experiment log and table of findings
+REPORT.md                      Short written report (English)
+REPORT.tr.md                   Short written report (Turkish)
+LICENSE                        MIT license
 ```
 
 ## Not covered
@@ -118,4 +121,4 @@ notes/research-daily.md        Experiment log and table of findings
 
 ## License
 
-Not yet chosen.
+MIT, see [LICENSE](LICENSE).
