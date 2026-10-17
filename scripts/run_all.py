@@ -1,15 +1,20 @@
-"""Experiment 8 (single file): run the 20-question set under all six settings, automatically.
+"""Run the 20-question set (or the held-out set) under the protection settings, automatically.
 
-For each setting this script edits .env, recreates the api container, waits until /health answers,
-checks the protections the app reports, runs the questions and appends to results/extended.csv.
-At the end it restores your original .env (a copy is also kept as .env.bak).
+For each setting this script edits .env (protection switches and OLLAMA_MODEL), rebuilds and recreates
+the api container, waits until /health answers, checks that the app reports the requested model and
+switches, runs the questions and appends to the results file. At the end it restores your original .env
+(a copy is also kept as .env.bak).
 
 Usage (repo root, Docker Desktop and Ollama running):
-  python scripts/run_all.py --dry-run       show what would be written to .env, change nothing
-  python scripts/run_all.py                 run every setting that has no results yet
-  python scripts/run_all.py none validate   run only the named settings
-  python scripts/run_all.py --summary       print the tables for results recorded so far
+  python scripts/run_all.py --dry-run                      show what would be written to .env, change nothing
+  python scripts/run_all.py                                every setting with no results yet for the current model
+  python scripts/run_all.py none fewshot                   only the named settings (re-runs them even if recorded)
+  python scripts/run_all.py --model qwen3.5:9b             same, with another Ollama model (must be pulled)
+  python scripts/run_all.py --set heldout none fewshot     held-out question set (results/heldout.csv)
+  python scripts/run_all.py --summary [--set heldout]      print the tables for results recorded so far
+Results are labelled by setting and model. Rows recorded before the model column existed count as qwen3.5:4b.
 """
+import argparse
 import csv
 import datetime
 import json
@@ -43,10 +48,13 @@ QUESTIONS = [
     {'id': '19', 'type': 'negative', 'question': 'What does the ollama container depend on?', 'required_all': '', 'required_any': 'no;none;not;nothing', 'forbidden': 'neo4j;coolify'},
     {'id': '20', 'type': 'vague', 'question': 'Tell me about the neo4j container.', 'required_all': '', 'required_any': 'neo4j:5;7687;pve-node1', 'forbidden': ''},
 ]
-
 URL = "http://localhost:8000"
-CSV_PATH = os.path.join("results", "extended.csv")
-FIELDS = ["time", "label", "protections", "id", "type", "question", "correct", "blocked", "answer", "cypher"]
+DEFAULT_MODEL = "qwen3.5:4b"  # model of every row recorded before the model column existed
+FIELDS = ["time", "label", "model", "protections", "id", "type", "question", "correct", "blocked", "answer", "cypher"]
+SETS = {
+    "extended": {"csv": os.path.join("results", "extended.csv"), "questions": None},
+    "heldout": {"csv": os.path.join("results", "heldout.csv"), "questions": os.path.join("questions", "questions_heldout.csv")},
+}
 
 
 def call(path, payload=None):
@@ -60,8 +68,12 @@ def words(cell):
     return [w.strip().lower() for w in (cell or "").split(";") if w.strip()]
 
 
-def load_questions():
-    return QUESTIONS
+def load_questions(qset="extended"):
+    path = SETS[qset]["questions"]
+    if path is None:
+        return QUESTIONS
+    with open(path, newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
 
 
 def has(a, w):
@@ -79,15 +91,38 @@ def is_correct(answer, q):
     return not any(has(a, w) for w in must_not)
 
 
-def run(label):
+def display(label, model):
+    return label if (model or DEFAULT_MODEL) == DEFAULT_MODEL else f"{label} [{model}]"
+
+
+def ensure_model_column(path):
+    """Old result files have no model column. Every earlier row used DEFAULT_MODEL."""
+    if not os.path.exists(path):
+        return
+    with open(path, newline="", encoding="utf-8") as f:
+        rd = csv.DictReader(f)
+        fields, rows = list(rd.fieldnames or []), list(rd)
+    if "model" in fields or "label" not in fields:
+        return
+    i = fields.index("label") + 1
+    fields = fields[:i] + ["model"] + fields[i:]
+    for r in rows:
+        r["model"] = DEFAULT_MODEL
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=fields)
+        w.writeheader()
+        w.writerows(rows)
+
+
+def run(label, model, questions, csv_path):
     health = call("/health")
     prot = health.get("protections", {})
-    print(f"Setting: {label}\nProtections reported by the app: {prot}\n")
+    print(f"Setting: {display(label, model)}\nProtections reported by the app: {prot}\n")
     os.makedirs("results", exist_ok=True)
-    new_file = not os.path.exists(CSV_PATH)
-    questions = load_questions()
+    ensure_model_column(csv_path)
+    new_file = not os.path.exists(csv_path)
     correct_total = 0
-    with open(CSV_PATH, "a", newline="", encoding="utf-8") as f:
+    with open(csv_path, "a", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS)
         if new_file:
             w.writeheader()
@@ -99,28 +134,30 @@ def run(label):
                 answer, cypher, blocked = f"ERROR: {e}", None, None
             ok = is_correct(answer, q)
             correct_total += ok
-            w.writerow({"time": datetime.datetime.now().isoformat(timespec="seconds"), "label": label,
+            w.writerow({"time": datetime.datetime.now().isoformat(timespec="seconds"), "label": label, "model": model,
                         "protections": json.dumps(prot), "id": q["id"], "type": q["type"],
                         "question": q["question"], "correct": int(ok), "blocked": blocked,
                         "answer": answer, "cypher": cypher})
             f.flush()
             print(f"{'OK  ' if ok else 'FAIL'} Q{q['id']:>2} {q['type']:<9} {q['question']}")
-    print(f"\nTotal: {correct_total}/{len(questions)} correct. Details saved in {CSV_PATH}")
+    print(f"\nTotal: {correct_total}/{len(questions)} correct. Details saved in {csv_path}")
 
 
-def summary():
-    if not os.path.exists(CSV_PATH):
+def summary(csv_path):
+    if not os.path.exists(csv_path):
         print("No results yet.")
         return
-    rows = list(csv.DictReader(open(CSV_PATH, encoding="utf-8")))
-    labels = list(dict.fromkeys(r["label"] for r in rows))
+    rows = list(csv.DictReader(open(csv_path, encoding="utf-8")))
+    for r in rows:
+        r["_key"] = display(r["label"], r.get("model"))
+    labels = list(dict.fromkeys(r["_key"] for r in rows))
     ids = sorted({int(r["id"]) for r in rows})
     types = list(dict.fromkeys(r["type"] for r in sorted(rows, key=lambda r: int(r["id"]))))
     print("Per question (1 = correct)\n")
     print("| Setting | " + " | ".join(f"Q{i}" for i in ids) + " | Total |")
     print("|---|" + "---|" * (len(ids) + 1))
     for lab in labels:
-        sel = {int(r["id"]): r for r in rows if r["label"] == lab}
+        sel = {int(r["id"]): r for r in rows if r["_key"] == lab}
         cells = [sel[i]["correct"] if i in sel else "-" for i in ids]
         tot = sum(int(sel[i]["correct"]) for i in ids if i in sel)
         print(f"| {lab} | " + " | ".join(cells) + f" | {tot}/{len(sel)} |")
@@ -130,12 +167,10 @@ def summary():
     for lab in labels:
         cells = []
         for t in types:
-            sel = [r for r in rows if r["label"] == lab and r["type"] == t]
+            sel = [r for r in rows if r["_key"] == lab and r["type"] == t]
             cells.append(f"{sum(int(r['correct']) for r in sel)}/{len(sel)}")
-        blocked = sum(1 for r in rows if r["label"] == lab and r["blocked"] == "True")
+        blocked = sum(1 for r in rows if r["_key"] == lab and r["blocked"] == "True")
         print(f"| {lab} | " + " | ".join(cells) + f" | {blocked} |")
-
-
 
 
 ENV = ".env"
@@ -157,6 +192,14 @@ def read_env():
         return f.read().splitlines()
 
 
+def env_value(key, default=None):
+    for line in read_env():
+        k, _, v = line.partition("=")
+        if k.strip() == key:
+            return v.strip()
+    return default
+
+
 def style():
     """Use true/false if the existing file does, otherwise 1/0."""
     for line in read_env():
@@ -166,7 +209,9 @@ def style():
     return ("1", "0")
 
 
-def write_env(values):
+def write_env(values, strings=None):
+    """values: on/off switches. strings: plain KEY=value settings such as OLLAMA_MODEL."""
+    strings = strings or {}
     on, off = style()
     lines, seen = read_env(), set()
     out = []
@@ -175,16 +220,23 @@ def write_env(values):
         if k in values:
             out.append(f"{k}={on if values[k] else off}")
             seen.add(k)
+        elif k in strings:
+            out.append(f"{k}={strings[k]}")
+            seen.add(k)
         else:
             out.append(line)
     for k, v in values.items():
         if k not in seen:
             out.append(f"{k}={on if v else off}")
+    for k, v in strings.items():
+        if k not in seen:
+            out.append(f"{k}={v}")
     with open(ENV, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(out) + "\n")
 
 
 def recreate_api():
+    # --build: the Dockerfile copies the code into the image, so a changed main.py needs a rebuild.
     subprocess.run(["docker", "compose", "up", "-d", "--build", "--force-recreate", "api"], check=True)
 
 
@@ -198,39 +250,51 @@ def wait_for_health(timeout=180):
     raise SystemExit("The api did not answer /health within 3 minutes. Check: docker compose logs api")
 
 
-def done_labels():
-    if not os.path.exists(CSV_PATH):
+def done_keys(csv_path):
+    if not os.path.exists(csv_path):
         return set()
-    return {r["label"] for r in csv.DictReader(open(CSV_PATH, encoding="utf-8"))}
+    return {(r["label"], r.get("model") or DEFAULT_MODEL) for r in csv.DictReader(open(csv_path, encoding="utf-8"))}
 
 
 def main():
-    if "--summary" in sys.argv:
-        summary()
+    ap = argparse.ArgumentParser(description="Run the question set under the protection settings.")
+    ap.add_argument("settings", nargs="*", help=f"settings to run (default: all). Valid: {list(SETTINGS)}")
+    ap.add_argument("--model", default=None, help="Ollama model (default: OLLAMA_MODEL from .env)")
+    ap.add_argument("--set", dest="qset", choices=list(SETS), default="extended", help="question set")
+    ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--summary", action="store_true")
+    args = ap.parse_args()
+    csv_path = SETS[args.qset]["csv"]
+    if args.summary:
+        summary(csv_path)
         return
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    dry = "--dry-run" in sys.argv
-    labels = args or list(SETTINGS)
+    model = args.model or env_value("OLLAMA_MODEL", DEFAULT_MODEL)
+    labels = args.settings or list(SETTINGS)
     unknown = [l for l in labels if l not in SETTINGS]
     if unknown:
         raise SystemExit(f"Unknown setting(s): {unknown}. Valid: {list(SETTINGS)}")
+    questions = load_questions(args.qset)
+    print(f"Question set: {args.qset} ({len(questions)} questions) | model: {model} | results: {csv_path}")
+    dry = args.dry_run
     if not dry:
         shutil.copyfile(ENV, ENV + ".bak")
-    already = done_labels()
+    already = done_keys(csv_path)
     try:
         for label in labels:
-            if label in already and not args:
-                print(f"Skipping '{label}' (results already recorded)")
+            if (label, model) in already and not args.settings:
+                print(f"Skipping '{label}' for {model} (results already recorded)")
                 continue
             values = dict(zip(KEYS, SETTINGS[label]))
-            print(f"\n=== {label}: {values}")
+            print(f"\n=== {label}: {values} | OLLAMA_MODEL={model}")
             if dry:
                 continue
-            write_env(values)
+            write_env(values, {"OLLAMA_MODEL": model})
             recreate_api()
             health = wait_for_health()
-            print("App reports:", health.get("protections", health))
-            run(label)
+            print("App reports:", health)
+            if health.get("model") != model:
+                raise SystemExit(f"The app reports model {health.get('model')!r}, expected {model!r}. Stopping.")
+            run(label, model, questions, csv_path)
     finally:
         if not dry:
             shutil.copyfile(ENV + ".bak", ENV)
@@ -238,7 +302,7 @@ def main():
             print("\nOriginal .env restored and api recreated.")
     if not dry:
         print("\nDone. Summary:\n")
-        summary()
+        summary(csv_path)
 
 
 if __name__ == "__main__":

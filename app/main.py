@@ -63,9 +63,10 @@ graph = GuardedGraph(
     password=os.environ["NEO4J_PASSWORD"],
     database=os.environ.get("NEO4J_DATABASE", "neo4j"),
 )
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:3b")
 llm = ChatOllama(
     base_url=os.environ["OLLAMA_BASE_URL"],
-    model=os.environ.get("OLLAMA_MODEL", "llama3.2:3b"),
+    model=OLLAMA_MODEL,
     temperature=0,
     reasoning=False,
 )
@@ -150,7 +151,7 @@ def index():
 
 @app.get("/health")
 def health():
-    return {"ok": True, "protections": {**PROTECTIONS, "label_rule": USE_LABEL_RULE, "fewshot": USE_FEWSHOT}}
+    return {"ok": True, "model": OLLAMA_MODEL, "protections": {**PROTECTIONS, "label_rule": USE_LABEL_RULE, "fewshot": USE_FEWSHOT}}
 
 @app.post("/seed")
 def seed():

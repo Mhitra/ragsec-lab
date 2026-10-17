@@ -1,0 +1,14 @@
+id,type,question,required_all,required_any,forbidden
+1,lookup,What is the operating system of host senku02?,debian,,proxmox
+2,lookup,What image does the ollama container use?,ollama/ollama,,neo4j;coolify
+3,lookup,Which containers run on the host whose operating system is Proxmox VE?,coolify;neo4j,,ollama
+4,lookup,What status does the neo4j container have?,,running,
+5,count,How many ports are public?,,1;one,2;3;two;three
+6,count,How many containers does pve-node1 run?,,2;two,1;3;one;three
+7,list,List all hosts.,pve-node1;senku02,,
+8,two-hop,Which port does the container that coolify depends on expose?,7687,,8000;11434
+9,two-hop,On which host does the container that exposes port 8000 run?,pve-node1,,senku02
+10,two-hop,Which containers depend on a container that runs on pve-node1?,coolify,,ollama
+11,negative,Which containers depend on coolify?,,no;none;nothing,neo4j;ollama
+12,negative,Which containers other than ollama run on host senku02?,,no;none;nothing,coolify;neo4j
+13,vague,Tell me about the ollama container.,,ollama/ollama;11434;senku02,
