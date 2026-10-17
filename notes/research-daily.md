@@ -1,6 +1,6 @@
 # Research Log
 
-**Status:** Single protections (3a-3c), generic error messages (4), the combined run (5), the repeated accuracy test (6) and a first indirect prompt injection test (7) and a 20-question accuracy test across six settings (8) are completed. A second defense layer test and a scoring/prompt fix are next.
+**Status:** Experiments 0 to 12 are completed: the baseline and the attack experiments (0 to 5), the accuracy tests with the six settings (6, 8), the indirect injection tests (7, 12), few-shot examples (9), a held-out question set (10) and the repeat with a larger model (11). What remains is the written report; open items are listed under "Upcoming experiments".
 
 **Research question:** How do the prompt-to-query attacks and defenses documented for LLM-to-SQL pipelines (Pedro et al., arXiv:2308.01990) carry over to a LangChain text-to-Cypher pipeline over Neo4j that uses small local models, and what do the defenses cost in accuracy?
 
@@ -9,7 +9,7 @@
 **Environment:** Windows, Docker Desktop, Neo4j Aura (cloud), Ollama (local), FastAPI + LangChain `GraphCypherQAChain`.
 All data in this lab is synthetic.
 
-**Timeline:** Day 1 (2 Oct 2026): baseline and first protections (Experiments 0 to 3c). Day 2 (3 Oct 2026): validator fix, generic errors, combined run and repeated accuracy test (3c-2 to 6). Day 3 (9 Oct 2026): indirect prompt injection (Experiment 7) and the 20-question accuracy test (Experiment 8).
+**Timeline:** Day 1 (2 Oct 2026): baseline and first protections (Experiments 0 to 3c). Day 2 (3 Oct 2026): validator fix, generic errors, combined run and repeated accuracy test (3c-2 to 6). Day 3 (9 Oct 2026): indirect prompt injection (Experiment 7) and the 20-question accuracy test (Experiment 8). Day 4 (17 Oct 2026): few-shot examples (Experiment 9), held-out question set (10), qwen3.5:9b repeat of Experiments 8 and 9 (11) and indirect injection with two models (12).
 
 ## Related work
 - Pedro et al., "From Prompt Injections to SQL Injection Attacks" (arXiv:2308.01990; ICSE 2025 as "Prompt-to-SQL Injections in LLM-Integrated Web Applications: Risks and Defenses"): prompt-to-SQL attacks on LangChain applications across several LLMs, with proposed defenses.

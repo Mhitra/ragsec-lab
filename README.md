@@ -97,12 +97,12 @@ app/main.py                    FastAPI app and the LangChain pipeline
 app/guard.py                   Allowlist validator for generated Cypher
 app/static/index.html          Minimal web UI
 app/seed.cypher                Synthetic infrastructure graph
-scripts/run_baseline.py        Older runner for the 20-question set (superseded by run_all.py, kept for history)
+scripts/run_baseline.py        5-question repeated runs of Experiment 6 (results/baseline.csv)
 scripts/run_all.py             20-question and held-out accuracy runs across settings and models
 scripts/rescore.py             Strict re-scoring of the result files
 scripts/run_injection.py       Indirect prompt injection experiment
 questions/                     Question sets and ground truth
-results/                       Raw answers, generated Cypher and scores (CSV); baseline.csv holds the early 5-question runs
+results/                       Raw answers, generated Cypher and scores (CSV)
 tests/test_guard.py            Tests for the validator
 notes/research-daily.md        Experiment log and table of findings
 ```
