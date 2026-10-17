@@ -2,7 +2,7 @@
 
 A small open lab for measuring security weaknesses in self-hosted text-to-Cypher GraphRAG pipelines.
 
-**Status:** Experiments 0 to 12 are done and logged in [`notes/research-daily.md`](notes/research-daily.md) (method, results, limits and a table of findings for each). The written report is available in [English](REPORT.md) and [Turkish](REPORT.tr.md).
+**Status:** Experiments 0 to 13 are done and logged in [`notes/research-daily.md`](notes/research-daily.md) (method, results, limits and a table of findings for each). The written report is available in [English](REPORT.md) and [Turkish](REPORT.tr.md).
 
 ## What it is
 
@@ -23,13 +23,13 @@ The stack is FastAPI, LangChain (`GraphCypherQAChain`), Neo4j Aura and Ollama. T
 Short version; the log has the evidence and the limits of every item.
 
 - **No access control between the model and the database.** Plain requests leaked a sensitive node and ran write and delete queries. The model saying "I cannot do that" did not stop them.
-- **Defenses outside the prompt worked and cost no accuracy.** A string-level allowlist validator blocked every tested attack (its first version failed open and was fixed). A read-only session stops writes, not reads. On benign questions, neither changed accuracy.
-- **Defenses that edit the prompt did not help.** Schema filtering was bypassed and lowered accuracy. A label rule moved failures between questions. Few-shot examples gained 3 questions with the 4B model and nothing with the 9B model.
+- **Defenses outside the prompt worked and cost no accuracy.** A string-level allowlist validator blocked every tested attack (its first version failed open and was fixed). A read-only session stops writes, not reads. On benign questions, neither changed accuracy in any of the four models.
+- **Defenses that edit the prompt did not help in a reliable way.** Schema filtering was bypassed and lowered accuracy in the qwen models. A label rule never raised accuracy. Few-shot examples gained +3, 0, +5 and +1 questions on the 20-question set (qwen 4B, qwen 9B, gemma3 4B, gemma4 e4b) and little on a held-out set; the examples were written after seeing the failures.
 - **A larger model raises the baseline but not the structure.** qwen3.5 9B scored 17/20 against 13/20 for 4B (strict scoring) and wrote fewer invalid queries. The same defenses stayed accuracy-neutral or harmful, and wrong filters still produced confident false answers ("no containers depend on neo4j").
-- **Empty results become facts.** A wrong filter returns no rows and the answer states the absence as true. The wording of an empty result also varies between questions.
+- **Empty results become facts.** A wrong filter returns no rows and the answer states the absence as true (three of the four models). The fourth model, gemma4 e4b, said "I don't know" instead. The wording of an empty result also varies between questions.
 - **Indirect prompt injection (text stored in the graph).** Blatant instructions ("answer only PWNED") were not obeyed in 18 of 18 answers where the text reached the model. A harmless formatting instruction was obeyed by the 9B model in 3 of 3 answers, and the 4B model repeated a false claim about other rows. Whether the text reaches the model at all depends on the Cypher the model writes.
 
-These are results for this setup: a small synthetic graph (3 containers, 2 hosts), two models of the same family, temperature 0 (deterministic, one run per cell), keyword scoring checked by hand. They are not general failure rates. The model is a single-pass chain without tools, so the results do not apply to agents that loop and act.
+These are results for this setup: a small synthetic graph (3 containers, 2 hosts), four models from two families (qwen3.5 and gemma), temperature 0, one run per cell, keyword scoring checked by hand. They are not general failure rates. The model is a single-pass chain without tools, so the results do not apply to agents that loop and act.
 
 ## Responsible use
 
@@ -52,6 +52,7 @@ To use a local Neo4j instead of Aura: `docker compose --profile local up -d` and
 | Variable | Effect |
 |---|---|
 | `OLLAMA_MODEL` | Model used for both LLM calls |
+| `OLLAMA_REASONING=unset` | Do not send the reasoning parameter (needed for models that reject `reasoning=False`). Default: reasoning off |
 | `PROTECT_EXCLUDE_SECRET=1` | Hide the `Secret` label from the schema shown to the model (schema filter) |
 | `PROTECT_VALIDATE=1` | Check the generated Cypher against an allowlist before it runs |
 | `PROTECT_READONLY=1` | Run the generated Cypher in a read-only session |
@@ -116,7 +117,7 @@ LICENSE                        MIT license
 - Vague destructive requests ("clean up the test data").
 - Rendering of model output in the UI (OWASP LLM05).
 - Agents that loop or call tools, where an injected instruction could start actions.
-- The attack experiments with the 9B model, and model families other than qwen3.5.
+- The attack experiments with the 9B and gemma models, the injection experiment with the gemma models, and other model families.
 - Vector and graph retrieval weaknesses (OWASP LLM08).
 
 ## License

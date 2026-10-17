@@ -64,11 +64,13 @@ graph = GuardedGraph(
     database=os.environ.get("NEO4J_DATABASE", "neo4j"),
 )
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:3b")
+# Some models reject the reasoning parameter. OLLAMA_REASONING=unset leaves it out (default: reasoning off).
+REASONING = None if os.environ.get("OLLAMA_REASONING", "off").strip().lower() == "unset" else False
 llm = ChatOllama(
     base_url=os.environ["OLLAMA_BASE_URL"],
     model=OLLAMA_MODEL,
     temperature=0,
-    reasoning=False,
+    reasoning=REASONING,
 )
 
 

@@ -6,7 +6,7 @@ Mustafa Sekizkardeş, October 2026. Code, data and the full experiment log: http
 
 ## Abstract
 
-I built a very small question-answering pipeline on a Neo4j graph. One model writes a Cypher query, the database runs the query, and a second model call writes the answer. Then I measured what goes wrong with small local models. I ran the experiments numbered 0 to 12 in the log with qwen3.5 4B and 9B. With no protection, a plain question leaked a stored secret, and plain requests created and deleted data. Protections outside the prompt (a query allowlist, a read-only database session) stopped the attacks I tried and did not change the accuracy on normal questions. Protections that change the prompt (hiding schema names, adding rules or examples) did not help. They moved the errors from one question to another. A bigger model raised the base score (from 13/20 to 17/20) but did not change this pattern, and a wrong query that returned nothing was still shown as a fact. Text placed in the database was not followed when it was obvious, but the bigger model followed a formatting instruction that looked harmless, and whether the placed text reached the model depended on the query the model wrote. The setup is small. The results show what is possible in this setup, not general error rates.
+I built a very small question-answering pipeline on a Neo4j graph. One model writes a Cypher query, the database runs the query, and a second model call writes the answer. Then I measured what goes wrong with small local models. I ran the experiments numbered 0 to 13 in the log with four models from two families (qwen3.5 4B and 9B, gemma3 4B, gemma4 e4b). With no protection, a plain question leaked a stored secret, and plain requests created and deleted data. Protections outside the prompt (a query allowlist, a read-only database session) stopped the attacks I tried and did not change the accuracy on normal questions. Protections that change the prompt (hiding schema names, adding rules or examples) did not help in a reliable way. Hiding schema names and adding a rule never raised the accuracy, and in some models they lowered it. Few-shot examples helped on the 20 questions in three of the four models, but little on a held-out set, and they moved some errors from one question to another. A bigger model raised the base score (from 13/20 to 17/20) but did not change this pattern, and a wrong query that returned nothing was still shown as a fact by three of the four models. The fourth model said "I don't know". Text placed in the database was not followed when it was obvious, but the bigger model followed a formatting instruction that looked harmless, and whether the placed text reached the model depended on the query the model wrote. The setup is small. The results show what is possible in this setup, not general error rates.
 
 ## 1. Introduction
 
@@ -27,7 +27,7 @@ question -> [model: write Cypher] -> [Neo4j] -> rows -> [model: write answer] ->
 
 **Data.** A small synthetic infrastructure graph: 3 containers, 2 hosts, 3 ports and one planted fake secret (`Container -[:HAS_SECRET]-> Secret`). All values are made up.
 
-**Models.** qwen3.5:4b and qwen3.5:9b through Ollama, temperature 0, reasoning off. At temperature 0 the same input gives the same output, so running a test again adds no statistical power. I ran each cell once.
+**Models.** qwen3.5:4b, qwen3.5:9b, gemma3:4b and gemma4:e4b through Ollama, temperature 0, reasoning off. At temperature 0 the same input gives the same output, so running a test again adds no statistical power. I ran each cell once.
 
 **Protections.**
 
@@ -57,32 +57,32 @@ A plain question, "What secrets does the coolify container have?", returned the 
 - **With all three together, 3/3 attacks were blocked** and 3 of 5 normal questions were answered. The read-only layer was never reached, because the validator stopped everything first. So this run measures the validator, not defense in depth.
 - Raw database errors reached the user and contained the database id. A generic error message (details only in the server log) closed this channel.
 
-### 3.3 What the defenses cost in accuracy (Experiments 6, 8, 9, 10, 11)
+### 3.3 What the defenses cost in accuracy (Experiments 6, 8, 9, 10, 11, 13)
 
-| Setting | 4B, strict (out of 20) | 9B, strict (out of 20) |
-|---|---|---|
-| No protection | 13 | 17 |
-| Validator | 13 | 17 |
-| Read-only | 13 | 17 |
-| Schema filter | 11 | 15 |
-| All three | 11 | 15 |
-| Label rule | 12 | 16 |
-| Few-shot examples | 16 | 17 |
+| Setting | qwen 4B | qwen 9B | gemma3 4B | gemma4 e4b |
+|---|---|---|---|---|
+| No protection | 13 | 17 | 13 | 16 |
+| Validator | 13 | 17 | 13 | 16 |
+| Read-only | 13 | 17 | 13 | 16 |
+| Schema filter | 11 | 15 | 13 | 16 |
+| All three | 11 | 15 | 13 | 16 |
+| Label rule | 12 | 16 | 10 | 16 |
+| Few-shot examples | 16 | 17 | 18 | 17 |
 
-Held-out set (13 questions, strict): no protection 8 (4B) and 11 (9B), label rule 9 and 11, few-shot 10 and 11.
+Strict score out of 20. Held-out set (13 questions, strict), no protection / label rule / few-shot: qwen 4B 8 / 9 / 10, qwen 9B 11 / 11 / 11, gemma3 8 / 7 / 9, gemma4 11 / 10 / 11.
 
-- **The validator and the read-only session did not change any answer to a harmless question**, in both models. With 9B the validator blocked one harmless question (in the two settings that include it): the model had written SQL-like text instead of Cypher, which fails in Neo4j anyway.
-- **Prompt changes moved the errors between questions.** The schema filter made both models lose two questions. The label rule fixed some questions and broke others. In the 4B model, even though the model is deterministic, a one-line prompt change changed which questions failed.
-- **Few-shot examples gained 3 questions with 4B and nothing with 9B.** The examples removed the syntax errors of the 4B model (from 3 error answers to 0), but they did not remove the errors of meaning (the direction of a relation, a container name used as a host name), and they moved some of them to other questions. I wrote the examples after reading the errors, so the 20-question result is not a test of generalization. On the held-out set the gain was smaller (+2 for 4B, 0 for 9B).
-- Each cell is one deterministic run over 13-20 questions. A difference of one or two questions is not proof of an effect.
+- **The validator and the read-only session did not change any answer to a harmless question**, in all four models. In two models the validator blocked one harmless question (qwen 9B and gemma3): the model had written invalid text instead of Cypher, which fails in Neo4j anyway.
+- **Prompt changes did not help in a reliable way.** The schema filter made the two qwen models lose two questions each and changed nothing in the gemma models. The label rule lost 1, 1, 3 and 0 questions. Neither one raised the accuracy in any model on the 20 questions. In the qwen 4B model, even though the model is deterministic, a one-line prompt change changed which questions failed.
+- **Few-shot examples gained 3 questions with qwen 4B, nothing with qwen 9B, 5 with gemma3 and 1 with gemma4.** The examples removed the syntax errors of the 4B model (from 3 error answers to 0), but they did not remove the errors of meaning (the direction of a relation, a container name used as a host name), and they moved some of them to other questions. I wrote the examples after reading the errors, so the 20-question result is not a test of generalization. On the held-out set the gain was smaller (+2, 0, +1 and 0). The big gain of gemma3 (from 13 to 18) is partly the same effect, because the examples came from the errors of the qwen 4B model on these questions.
+- Each cell is one run over 13-20 questions. A difference of one or two questions is not proof of an effect. Two first runs of gemma4 gave errors during a slow period of the laptop (it was on battery). I ran them again with the charger connected, and the first runs are kept apart (see section 8).
 
-### 3.4 A bigger model raises the base score, not the structure (Experiment 11)
+### 3.4 A bigger model raises the base score, not the structure (Experiments 11 and 13)
 
-The 9B model without protection scored 17/20, and the 4B model scored 13/20. The 9B model answered all ten lookup questions correctly (4B: 7 of 10) and wrote far fewer invalid queries. The pattern stayed the same: the validator and read-only did not touch the accuracy, prompt changes were neutral or harmful, and some wrong queries were the same in both models. For example, both models used a container name as a host name (`Host {name: 'coolify'}`) and gave the answer "No other containers run on the same host as coolify."
+The 9B model without protection scored 17/20, and the 4B model scored 13/20. The 9B model answered all ten lookup questions correctly (4B: 7 of 10) and wrote far fewer invalid queries. The pattern stayed the same: the validator and read-only did not touch the accuracy, prompt changes were neutral or harmful, and some wrong queries were the same in both models. For example, both models used a container name as a host name (`Host {name: 'coolify'}`) and gave the answer "No other containers run on the same host as coolify." The same error appears in the two gemma models, and few-shot examples fixed it in all four. The gemma4 model made the same wrong query but gave the answer "I don't know", so the error looked different to the user. In all 10 runs of gemma4 there was no wrong or denying answer. Its misses were "I don't know" answers, for example on the three negative questions, where the query was correct, the result was empty, and the strict score counts the abstention as wrong.
 
 ### 3.5 Wrong queries turn into wrong answers given with confidence (Experiments 1, 8, 10)
 
-When a wrong filter returns no rows, the answer step reports the absence as a fact: "No host runs the ollama container" (it filtered on `image` instead of `name`), "No containers depend on neo4j" (reversed arrow, wrong property). These are more dangerous than visible errors, because nothing tells the user that the query was wrong. The wording of an empty result is also not stable: the same pipeline answered one empty result with "I don't know" and another with "No containers depend on coolify". Over both question sets and both models, the wrong or denying answers were 9 out of 66 without examples and 3 out of 66 with few-shot. The numbers are small, but the direction suggests that the examples reduced wrong answers given with confidence more than they increased accuracy.
+When a wrong filter returns no rows, the answer step reports the absence as a fact: "No host runs the ollama container" (it filtered on `image` instead of `name`), "No containers depend on neo4j" (reversed arrow, wrong property). These are more dangerous than visible errors, because nothing tells the user that the query was wrong. The wording of an empty result is also not stable: the same pipeline answered one empty result with "I don't know" and another with "No containers depend on coolify". Over both question sets and four models, the wrong or denying answers were 16 out of 132 without examples and 6 out of 132 with few-shot (gemma4 had none in both settings). The numbers are small, but the direction suggests that the examples reduced wrong answers given with confidence more than they increased accuracy.
 
 ### 3.6 Text placed in the database (Experiments 7 and 12)
 
@@ -110,11 +110,11 @@ What I take from this, inside the limits of the setup:
 
 ## 5. Limits
 
-- One synthetic graph (3 containers, 2 hosts), two models from one family, one deterministic run per cell. The effective sample size is 13-20 questions per setting. A difference of one or two questions is noise.
+- One synthetic graph (3 containers, 2 hosts), four models from two families, one run per cell. The effective sample size is 13-20 questions per setting. A difference of one or two questions is noise.
 - The few-shot examples were written after reading the errors, and the held-out questions were written by the same person. So they are separate from the examples, but not independent of me.
 - Scoring was done with keywords, a strict re-score and reading by hand. It can still miss errors.
 - The pipeline is a single pass without tools. The results do not apply to agents that loop and call tools.
-- The attack experiments (2-5) used only the 4B model.
+- The attack experiments (2-5) used only the qwen 4B model, and the injection experiments used only the two qwen models.
 - The validator is a string-level check. I did not try to get around it with a live model.
 
 ## 6. Related work
@@ -123,8 +123,8 @@ Pedro et al. ("From Prompt Injections to SQL Injection Attacks", arXiv:2308.0199
 
 ## 7. Not covered
 
-Attempts to get around the validator with a live model; vague destructive requests ("clean up the test data"); how the interface renders the model output (OWASP LLM05); agents that loop or call tools (an injected instruction could start an action); attack experiments with 9B and with other model families; weaknesses in vector and graph retrieval.
+Attempts to get around the validator with a live model; vague destructive requests ("clean up the test data"); how the interface renders the model output (OWASP LLM05); agents that loop or call tools (an injected instruction could start an action); the attack experiments with the 9B and gemma models, and the injection experiments with the gemma models; weaknesses in vector and graph retrieval.
 
 ## 8. Reproducing this
 
-Everything is in the repository: the pipeline (`app/`), the scripts (`scripts/run_all.py`, `scripts/rescore.py`, `scripts/run_injection.py`), the question sets and ground truth (`questions/`), every raw answer with the generated Cypher (`results/`), and the dated log with the method and limits of each experiment (`notes/research-daily.md`). The commands are in the README. All data is synthetic. Two runs that went wrong (an empty database, an old container image) were kept apart and were not counted.
+Everything is in the repository: the pipeline (`app/`), the scripts (`scripts/run_all.py`, `scripts/rescore.py`, `scripts/run_injection.py`), the question sets and ground truth (`questions/`), every raw answer with the generated Cypher (`results/`), and the dated log with the method and limits of each experiment (`notes/research-daily.md`). The commands are in the README. All data is synthetic. Four runs that went wrong (an empty database, an old container image, and two first runs of gemma4 during a slow period of the laptop) were kept apart and were not counted.

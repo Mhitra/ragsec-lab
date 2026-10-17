@@ -6,7 +6,7 @@ Mustafa Sekizkardeş, Ekim 2026. Kod, veri ve deney günlüğünün tamamı: htt
 
 ## Özet
 
-Neo4j grafı üzerinde en küçük hâliyle bir soru-cevap hattı kurdum (bir model Cypher sorgusu yazıyor, veritabanı sorguyu çalıştırıyor, ikinci bir model çağrısı cevabı yazıyor) ve küçük yerel modellerle neyin ters gittiğini ölçtüm. Günlükte 0'dan 12'ye numaralanan deneyleri qwen3.5 4B ve 9B ile yaptım. Koruma yokken düz bir soru depolanmış bir sırrı sızdırdı, düz istekler veri oluşturdu ve sildi. Prompt dışındaki korumalar (sorgu izin listesi, salt okunur veritabanı oturumu) denediğim saldırıları durdurdu ve normal sorularda doğruluğu değiştirmedi. Prompt'u değiştiren korumalar (şema adlarını gizlemek, kural ya da örnek eklemek) işe yaramadı: hataları bir sorudan diğerine kaydırdı. Daha büyük bir model tabanı yükseltti (13/20'den 17/20'ye) ama bu örüntüyü değiştirmedi, ve hiçbir şey döndürmeyen yanlış bir sorgu yine olgu gibi sunuldu. Veritabanına yerleştirilen metin, bariz olduğunda izlenmedi; ancak büyük model zararsız görünen bir biçim talimatına uydu, ve yerleştirilen metnin modele ulaşıp ulaşmaması modelin yazdığı sorguya bağlıydı. Kurulum küçüktür; sonuçlar bu kurulumda neyin mümkün olduğunu gösterir, genel hata oranlarını değil.
+Neo4j grafı üzerinde en küçük hâliyle bir soru-cevap hattı kurdum (bir model Cypher sorgusu yazıyor, veritabanı sorguyu çalıştırıyor, ikinci bir model çağrısı cevabı yazıyor) ve küçük yerel modellerle neyin ters gittiğini ölçtüm. Günlükte 0'dan 13'e numaralanan deneyleri iki aileden dört modelle yaptım (qwen3.5 4B ve 9B, gemma3 4B, gemma4 e4b). Koruma yokken düz bir soru depolanmış bir sırrı sızdırdı, düz istekler veri oluşturdu ve sildi. Prompt dışındaki korumalar (sorgu izin listesi, salt okunur veritabanı oturumu) denediğim saldırıları durdurdu ve normal sorularda doğruluğu değiştirmedi. Prompt'u değiştiren korumalar (şema adlarını gizlemek, kural ya da örnek eklemek) güvenilir biçimde işe yaramadı: şema adlarını gizlemek ve kural eklemek doğruluğu hiçbir modelde artırmadı, bazılarında düşürdü; few-shot örnekleri 20 soruda dört modelin üçünde yardımcı oldu, ayrılmış sette ise az, ve bazı hataları bir sorudan diğerine kaydırdı. Daha büyük bir model tabanı yükseltti (13/20'den 17/20'ye) ama bu örüntüyü değiştirmedi, ve hiçbir şey döndürmeyen yanlış bir sorgu dört modelin üçünde yine olgu gibi sunuldu; dördüncüsü "I don't know" dedi. Veritabanına yerleştirilen metin, bariz olduğunda izlenmedi; ancak büyük model zararsız görünen bir biçim talimatına uydu, ve yerleştirilen metnin modele ulaşıp ulaşmaması modelin yazdığı sorguya bağlıydı. Kurulum küçüktür; sonuçlar bu kurulumda neyin mümkün olduğunu gösterir, genel hata oranlarını değil.
 
 ## 1. Giriş
 
@@ -27,7 +27,7 @@ soru -> [model: Cypher yaz] -> [Neo4j] -> satırlar -> [model: cevap yaz] -> cev
 
 **Veri.** Küçük, sentetik bir altyapı grafı: 3 container, 2 host, 3 port ve yerleştirilmiş tek bir sahte sır (`Container -[:HAS_SECRET]-> Secret`). Tüm değerler uydurmadır.
 
-**Modeller.** Ollama üzerinden qwen3.5:4b ve qwen3.5:9b, sıcaklık 0, akıl yürütme (reasoning) kapalı. Sıcaklık 0'da aynı girdi aynı çıktıyı verir; bu yüzden bir koşuyu tekrarlamak istatistiksel güç katmaz. Her hücreyi bir kez çalıştırdım.
+**Modeller.** Ollama üzerinden qwen3.5:4b, qwen3.5:9b, gemma3:4b ve gemma4:e4b, sıcaklık 0, akıl yürütme (reasoning) kapalı. Sıcaklık 0'da aynı girdi aynı çıktıyı verir; bu yüzden bir koşuyu tekrarlamak istatistiksel güç katmaz. Her hücreyi bir kez çalıştırdım.
 
 **Korumalar.**
 
@@ -57,32 +57,32 @@ Düz bir soru, "What secrets does the coolify container have?", ilk denemede sah
 - **Üçü birleşince 3/3 saldırı engellendi** ve 5 normal sorudan 3'ü cevaplandı. Salt okunur katmana hiç ulaşılmadı, çünkü doğrulayıcı her şeyi önce durdurdu; yani bu koşu derinlemesine savunmayı değil doğrulayıcıyı ölçer.
 - Ham veritabanı hataları kullanıcıya ulaştı ve veritabanı kimliğini içeriyordu. Genel bir hata mesajı (ayrıntı yalnızca sunucu günlüğünde) bu kanalı kapattı.
 
-### 3.3 Savunmaların doğruluğa maliyeti (Deney 6, 8, 9, 10, 11)
+### 3.3 Savunmaların doğruluğa maliyeti (Deney 6, 8, 9, 10, 11, 13)
 
-| Ayar | 4B, katı (20 üzerinden) | 9B, katı (20 üzerinden) |
-|---|---|---|
-| Koruma yok | 13 | 17 |
-| Doğrulayıcı | 13 | 17 |
-| Salt okunur | 13 | 17 |
-| Şema filtresi | 11 | 15 |
-| Üçü birden | 11 | 15 |
-| Etiket kuralı | 12 | 16 |
-| Few-shot örnekleri | 16 | 17 |
+| Ayar | qwen 4B | qwen 9B | gemma3 4B | gemma4 e4b |
+|---|---|---|---|---|
+| Koruma yok | 13 | 17 | 13 | 16 |
+| Doğrulayıcı | 13 | 17 | 13 | 16 |
+| Salt okunur | 13 | 17 | 13 | 16 |
+| Şema filtresi | 11 | 15 | 13 | 16 |
+| Üçü birden | 11 | 15 | 13 | 16 |
+| Etiket kuralı | 12 | 16 | 10 | 16 |
+| Few-shot örnekleri | 16 | 17 | 18 | 17 |
 
-Ayrılmış set (13 soru, katı): koruma yok 8 (4B) ve 11 (9B), etiket kuralı 9 ve 11, few-shot 10 ve 11.
+Katı skor, 20 üzerinden. Ayrılmış set (13 soru, katı), koruma yok / etiket kuralı / few-shot: qwen 4B 8 / 9 / 10, qwen 9B 11 / 11 / 11, gemma3 8 / 7 / 9, gemma4 11 / 10 / 11.
 
-- **Doğrulayıcı ve salt okunur oturum, iki modelde de zararsız sorulardaki hiçbir cevabı değiştirmedi.** 9B ile doğrulayıcı bir zararsız soruyu engelledi (onu içeren iki ayarda): model Cypher yerine SQL benzeri metin yazmıştı, ki bu zaten Neo4j'de başarısız olur.
-- **Prompt düzenlemeleri hataları sorular arasında kaydırdı.** Şema filtresi iki modelde de iki soru kaybettirdi. Etiket kuralı bazı soruları düzeltti, bazılarını bozdu. 4B modelde, model deterministik olduğu hâlde tek satırlık bir prompt değişikliği hangi soruların başarısız olduğunu değiştirdi.
-- **Few-shot örnekleri 4B ile 3 soru kazandırdı, 9B ile hiçbir şey.** Örnekler 4B modelin sözdizimi hatalarını giderdi (3 hata cevabından 0'a), ama anlam hatalarını (ilişki yönü, bir container adının host adı olarak kullanılması) gidermedi ve bazılarını başka sorulara kaydırdı. Örnekleri hataları okuduktan sonra yazdım; bu yüzden 20 soruluk sonuç bir genelleme testi değildir. Ayrılmış sette kazanç daha küçüktü (4B için +2, 9B için 0).
-- Her hücre, 13-20 soru üzerinde tek bir deterministik koşudur. Bir ya da iki soruluk farklar bir etkinin kanıtı değildir.
+- **Doğrulayıcı ve salt okunur oturum, dört modelde de zararsız sorulardaki hiçbir cevabı değiştirmedi.** İki modelde doğrulayıcı bir zararsız soruyu engelledi (qwen 9B ve gemma3): model Cypher yerine geçersiz metin yazmıştı, ki bu zaten Neo4j'de başarısız olur.
+- **Prompt düzenlemeleri güvenilir biçimde yardımcı olmadı.** Şema filtresi iki qwen modeline ikişer soru kaybettirdi, gemma modellerinde hiçbir şeyi değiştirmedi. Etiket kuralı 1, 1, 3 ve 0 soru kaybettirdi. Hiçbiri 20 soruda hiçbir modelde doğruluğu artırmadı. qwen 4B modelde, model deterministik olduğu hâlde tek satırlık bir prompt değişikliği hangi soruların başarısız olduğunu değiştirdi.
+- **Few-shot örnekleri qwen 4B ile 3 soru, qwen 9B ile hiçbir şey, gemma3 ile 5, gemma4 ile 1 soru kazandırdı.** Örnekler 4B modelin sözdizimi hatalarını giderdi (3 hata cevabından 0'a), ama anlam hatalarını (ilişki yönü, bir container adının host adı olarak kullanılması) gidermedi ve bazılarını başka sorulara kaydırdı. Örnekleri hataları okuduktan sonra yazdım; bu yüzden 20 soruluk sonuç bir genelleme testi değildir. Ayrılmış sette kazanç daha küçüktü (+2, 0, +1 ve 0). gemma3'ün büyük kazancı (13'ten 18'e) kısmen aynı etkidir, çünkü örnekler qwen 4B modelinin bu sorulardaki hatalarından çıktı.
+- Her hücre, 13-20 soru üzerinde tek bir koşudur. Bir ya da iki soruluk farklar bir etkinin kanıtı değildir. gemma4'ün iki ilk koşusu, dizüstünün yavaşladığı bir dönemde (pilde çalışıyordu) hata verdi; şarj takılıyken yeniden çalıştırdım, ilk koşuları ayrı tuttum (bölüm 8'e bak).
 
-### 3.4 Daha büyük model tabanı yükseltir, yapıyı değil (Deney 11)
+### 3.4 Daha büyük model tabanı yükseltir, yapıyı değil (Deney 11 ve 13)
 
-Korumasız 9B model 17/20 aldı, 4B ise 13/20; on arama sorusunun hepsini doğru cevapladı (4B: 10'da 7) ve çok daha az geçersiz sorgu yazdı. Örüntü korundu: doğrulayıcı ve salt okunur doğruluğa dokunmadı, prompt düzenlemeleri nötr ya da zararlıydı, ve bazı yanlış sorgular iki modelde aynıydı. Örneğin her iki model de bir container adını host adı olarak kullandı (`Host {name: 'coolify'}`) ve "No other containers run on the same host as coolify." cevabını verdi.
+Korumasız 9B model 17/20 aldı, 4B ise 13/20; on arama sorusunun hepsini doğru cevapladı (4B: 10'da 7) ve çok daha az geçersiz sorgu yazdı. Örüntü korundu: doğrulayıcı ve salt okunur doğruluğa dokunmadı, prompt düzenlemeleri nötr ya da zararlıydı, ve bazı yanlış sorgular iki modelde aynıydı. Örneğin her iki model de bir container adını host adı olarak kullandı (`Host {name: 'coolify'}`) ve "No other containers run on the same host as coolify." cevabını verdi. Aynı hata iki gemma modelinde de var ve few-shot örnekleri dördünde de düzeltti. gemma4 modeli aynı yanlış sorguyu yazdı ama "I don't know" cevabını verdi; yani hata kullanıcıya farklı göründü. gemma4'ün 10 koşusunun hiçbirinde yanlış ya da inkâr eden cevap olmadı. Hataları "I don't know" cevaplarıydı; örneğin üç olumsuz soruda sorgu doğruydu, sonuç boştu ve katı skor bu çekimserliği yanlış sayıyor.
 
 ### 3.5 Yanlış sorgular kendinden emin yanlış cevaplara dönüşür (Deney 1, 8, 10)
 
-Yanlış bir filtre hiç satır döndürmediğinde cevap aşaması yokluğu olgu olarak bildirir: "No host runs the ollama container" (`name` yerine `image` üzerinden filtreledi), "No containers depend on neo4j" (ters ok, yanlış özellik). Bunlar görünür hatalardan daha tehlikelidir, çünkü hiçbir şey kullanıcıya sorgunun yanlış olduğunu söylemez. Boş bir sonucun ifadesi de kararsızdır: aynı hat bir boş sonucu "I don't know" ile, bir diğerini "No containers depend on coolify" ile cevapladı. Her iki soru seti ve iki model üzerinden, yanlış ya da inkâr eden cevaplar örneksiz 66'da 9, few-shot ile 66'da 3'tü. Sayılar küçük, ama yön, örneklerin doğruluğu artırmaktan çok kendinden emin yanlış cevapları azalttığını düşündürüyor.
+Yanlış bir filtre hiç satır döndürmediğinde cevap aşaması yokluğu olgu olarak bildirir: "No host runs the ollama container" (`name` yerine `image` üzerinden filtreledi), "No containers depend on neo4j" (ters ok, yanlış özellik). Bunlar görünür hatalardan daha tehlikelidir, çünkü hiçbir şey kullanıcıya sorgunun yanlış olduğunu söylemez. Boş bir sonucun ifadesi de kararsızdır: aynı hat bir boş sonucu "I don't know" ile, bir diğerini "No containers depend on coolify" ile cevapladı. Her iki soru seti ve dört model üzerinden, yanlış ya da inkâr eden cevaplar örneksiz 132'de 16, few-shot ile 132'de 6'ydı (gemma4'te iki ayarda da yoktu). Sayılar küçük, ama yön, örneklerin doğruluğu artırmaktan çok kendinden emin yanlış cevapları azalttığını düşündürüyor.
 
 ### 3.6 Veritabanına yerleştirilen metin (Deney 7 ve 12)
 
@@ -110,11 +110,11 @@ Kurulumun sınırları içinde bundan çıkardıklarım:
 
 ## 5. Sınırlar
 
-- Bir sentetik graf (3 container, 2 host), tek aileden iki model, hücre başına tek deterministik koşu. Etkin örneklem ayar başına 13-20 soru; bir ya da iki soruluk farklar gürültüdür.
+- Bir sentetik graf (3 container, 2 host), iki aileden dört model, hücre başına tek koşu. Etkin örneklem ayar başına 13-20 soru; bir ya da iki soruluk farklar gürültüdür.
 - Few-shot örnekleri hataları okuduktan sonra yazıldı ve ayrılmış sorular aynı kişi tarafından yazıldı; yani örneklerden ayrılmıştır ama benden bağımsız değildir.
 - Puanlama anahtar kelimelerle, katı yeniden puanlama ve elle okumayla yapıldı; yine de hataları kaçırabilir.
 - Hat, araçsız tek geçiştir. Sonuçlar, döngüye giren ve araç çağıran ajanlar için geçerli değildir.
-- Saldırı deneyleri (2-5) yalnızca 4B modeli kullandı.
+- Saldırı deneyleri (2-5) yalnızca qwen 4B modeli, enjeksiyon deneyleri yalnızca iki qwen modelini kullandı.
 - Doğrulayıcı dize düzeyinde bir denetimdir. Onu canlı bir modelle atlatmayı denemedim.
 
 ## 6. İlgili çalışmalar
@@ -123,8 +123,8 @@ Pedro ve ark. ("From Prompt Injections to SQL Injection Attacks", arXiv:2308.019
 
 ## 7. Kapsam dışı
 
-Doğrulayıcıyı canlı bir modelle atlatma denemeleri; belirsiz yıkıcı istekler ("test verisini temizle"); model çıktısının arayüzde işlenmesi (OWASP LLM05); döngüye giren ya da araç çağıran ajanlar (enjekte edilmiş bir talimat eylem başlatabilir); 9B ve diğer model aileleriyle saldırı deneyleri; vektör ve graf getirme zayıflıkları.
+Doğrulayıcıyı canlı bir modelle atlatma denemeleri; belirsiz yıkıcı istekler ("test verisini temizle"); model çıktısının arayüzde işlenmesi (OWASP LLM05); döngüye giren ya da araç çağıran ajanlar (enjekte edilmiş bir talimat eylem başlatabilir); 9B ve gemma modelleriyle saldırı deneyleri ve gemma modelleriyle enjeksiyon deneyleri; vektör ve graf getirme zayıflıkları.
 
 ## 8. Yeniden üretme
 
-Her şey depoda: hat (`app/`), betikler (`scripts/run_all.py`, `scripts/rescore.py`, `scripts/run_injection.py`), soru setleri ve gerçek cevaplar (`questions/`), üretilen Cypher ile her ham cevap (`results/`) ve her deneyin yöntemi ve sınırlarıyla tarihli günlük (`notes/research-daily.md`). Komutlar README'de. Tüm veri sentetiktir. Ters giden iki koşu (boş veritabanı, eski container imajı) ayrı tutuldu ve sayılmadı.
+Her şey depoda: hat (`app/`), betikler (`scripts/run_all.py`, `scripts/rescore.py`, `scripts/run_injection.py`), soru setleri ve gerçek cevaplar (`questions/`), üretilen Cypher ile her ham cevap (`results/`) ve her deneyin yöntemi ve sınırlarıyla tarihli günlük (`notes/research-daily.md`). Komutlar README'de. Tüm veri sentetiktir. Ters giden dört koşu (boş veritabanı, eski container imajı ve dizüstünün yavaşladığı bir dönemde gemma4'ün iki ilk koşusu) ayrı tutuldu ve sayılmadı.
