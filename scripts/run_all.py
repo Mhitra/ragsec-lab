@@ -139,15 +139,16 @@ def summary():
 
 
 ENV = ".env"
-KEYS = ["PROTECT_EXCLUDE_SECRET", "PROTECT_VALIDATE", "PROTECT_READONLY", "PROMPT_LABEL_RULE"]
-# label -> (exclude_secret, validate, readonly, label_rule)
+KEYS = ["PROTECT_EXCLUDE_SECRET", "PROTECT_VALIDATE", "PROTECT_READONLY", "PROMPT_LABEL_RULE", "PROMPT_FEWSHOT"]
+# label -> (exclude_secret, validate, readonly, label_rule, fewshot)
 SETTINGS = {
-    "none":          (0, 0, 0, 0),
-    "validate":      (0, 1, 0, 0),
-    "readonly":      (0, 0, 1, 0),
-    "schema_filter": (1, 0, 0, 0),
-    "all_three":     (1, 1, 1, 0),
-    "label_rule":    (0, 0, 0, 1),
+    "none":          (0, 0, 0, 0, 0),
+    "validate":      (0, 1, 0, 0, 0),
+    "readonly":      (0, 0, 1, 0, 0),
+    "schema_filter": (1, 0, 0, 0, 0),
+    "all_three":     (1, 1, 1, 0, 0),
+    "label_rule":    (0, 0, 0, 1, 0),
+    "fewshot":       (0, 0, 0, 0, 1),
 }
 
 
@@ -184,7 +185,7 @@ def write_env(values):
 
 
 def recreate_api():
-    subprocess.run(["docker", "compose", "up", "-d", "--force-recreate", "api"], check=True)
+    subprocess.run(["docker", "compose", "up", "-d", "--build", "--force-recreate", "api"], check=True)
 
 
 def wait_for_health(timeout=180):

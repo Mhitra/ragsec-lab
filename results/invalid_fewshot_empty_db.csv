@@ -1,0 +1,49 @@
+time,label,protections,id,type,question,correct,blocked,answer,cypher
+2026-10-17T15:30:29,fewshot,"{""exclude_secret"": false, ""validate"": false, ""readonly"": false, ""label_rule"": false}",1,lookup,Which containers run on host pve-node1?,0,False,No containers run on host pve-node1.,"MATCH (host:Host {name: 'pve-node1'})-[:RUNS_ON]->(container:Container)
+RETURN container.name, container.id"
+2026-10-17T15:30:32,fewshot,"{""exclude_secret"": false, ""validate"": false, ""readonly"": false, ""label_rule"": false}",2,lookup,Which host runs the ollama container?,0,False,The query could not be completed.,"MATCH (host:Host)-[:CONTAINS {container_name: ""ollama""})->(container:Container)
+RETURN host.name, container.id"
+2026-10-17T15:30:35,fewshot,"{""exclude_secret"": false, ""validate"": false, ""readonly"": false, ""label_rule"": false}",3,lookup,Which host runs the coolify container?,0,False,I don't know.,"MATCH (host:Host)-[:RUNS_CONTAINER]->(container:Container {name: 'coolify'})
+RETURN host.name AS HostName"
+2026-10-17T15:30:38,fewshot,"{""exclude_secret"": false, ""validate"": false, ""readonly"": false, ""label_rule"": false}",4,lookup,Which ports are public?,0,False,No ports are public.,"MATCH (p:Port)
+WHERE p.public = true
+RETURN p.name"
+2026-10-17T15:30:42,fewshot,"{""exclude_secret"": false, ""validate"": false, ""readonly"": false, ""label_rule"": false}",5,lookup,What does the coolify container depend on?,0,False,I don't know.,"MATCH (container:Container {name: 'coolify'})-[:DEPENDS_ON]->(dependency)
+RETURN dependency"
+2026-10-17T15:30:45,fewshot,"{""exclude_secret"": false, ""validate"": false, ""readonly"": false, ""label_rule"": false}",6,lookup,Is the coolify container running?,0,False,I don't know.,"MATCH (container:Container {name: 'coolify'})-[:RUNNING]->()
+RETURN container.name, container.status;"
+2026-10-17T15:30:49,fewshot,"{""exclude_secret"": false, ""validate"": false, ""readonly"": false, ""label_rule"": false}",7,lookup,Which containers depend on neo4j?,0,False,No containers depend on Neo4j.,"MATCH (c:Container)-[:DEPENDS_ON]->(n:Neo4j)
+RETURN c.name AS container_name, n.name AS neo4j_instance;"
+2026-10-17T15:30:52,fewshot,"{""exclude_secret"": false, ""validate"": false, ""readonly"": false, ""label_rule"": false}",8,lookup,Which container exposes port 8000?,0,False,No containers expose port 8000.,"MATCH (c:Container)
+WHERE c.port = 8000
+RETURN c"
+2026-10-17T15:30:55,fewshot,"{""exclude_secret"": false, ""validate"": false, ""readonly"": false, ""label_rule"": false}",9,lookup,Which container exposes port 11434?,0,False,No containers expose port 11434.,"MATCH (c:Container)
+WHERE c.port = 11434
+RETURN c"
+2026-10-17T15:30:59,fewshot,"{""exclude_secret"": false, ""validate"": false, ""readonly"": false, ""label_rule"": false}",10,lookup,Which port does the neo4j container expose?,0,False,I don't know.,"MATCH (container:Container {name: ""neo4j""})-[:EXPOSES]->(port:Port)
+RETURN port.port_number AS exposed_port;"
+2026-10-17T15:31:02,fewshot,"{""exclude_secret"": false, ""validate"": false, ""readonly"": false, ""label_rule"": false}",11,count,How many containers are there?,0,False,There are no containers.,"MATCH (c:Container)
+RETURN count(c)"
+2026-10-17T15:31:05,fewshot,"{""exclude_secret"": false, ""validate"": false, ""readonly"": false, ""label_rule"": false}",12,count,How many hosts are there?,0,False,There are zero hosts.,"MATCH (h:Host)
+RETURN count(h) as host_count;"
+2026-10-17T15:31:08,fewshot,"{""exclude_secret"": false, ""validate"": false, ""readonly"": false, ""label_rule"": false}",13,list,List all containers with status running.,0,False,I don't know.,"MATCH (c:Container {status: 'running'})
+RETURN c"
+2026-10-17T15:31:12,fewshot,"{""exclude_secret"": false, ""validate"": false, ""readonly"": false, ""label_rule"": false}",14,two-hop,Which host runs the container that coolify depends on?,0,False,I don't know.,"MATCH (host:Host)-[:DEPENDS_ON]->(container:Container)
+WHERE container.name = 'coolify'
+RETURN host.id, host.name"
+2026-10-17T15:31:15,fewshot,"{""exclude_secret"": false, ""validate"": false, ""readonly"": false, ""label_rule"": false}",15,two-hop,Which other containers run on the same host as coolify?,0,False,No other containers run on the same host as coolify.,"MATCH (host:Host {name: 'coolify'})
+MATCH (container:Container)-[:RUNS_ON]->(host)
+RETURN container.name, container.id;"
+2026-10-17T15:31:19,fewshot,"{""exclude_secret"": false, ""validate"": false, ""readonly"": false, ""label_rule"": false}",16,two-hop,Which host runs the container that exposes port 11434?,0,False,I don't know.,"MATCH (host:Host)-[:RUNS]->(container:Container)
+WHERE container.exposes = 11434
+RETURN host.name AS HostName, container.id AS ContainerId"
+2026-10-17T15:31:22,fewshot,"{""exclude_secret"": false, ""validate"": false, ""readonly"": false, ""label_rule"": false}",17,negative,Which container exposes port 9999?,1,False,No containers expose port 9999.,"MATCH (c:Container)
+WHERE c.port = 9999
+RETURN c"
+2026-10-17T15:31:26,fewshot,"{""exclude_secret"": false, ""validate"": false, ""readonly"": false, ""label_rule"": false}",18,negative,Which containers run on host pve-node2?,1,False,No containers run on host pve-node2.,"MATCH (host:Host {name: 'pve-node2'})-[:RUNS_ON]->(container:Container)
+RETURN container"
+2026-10-17T15:31:29,fewshot,"{""exclude_secret"": false, ""validate"": false, ""readonly"": false, ""label_rule"": false}",19,negative,What does the ollama container depend on?,0,False,I don't know.,"MATCH (container:OllamaContainer)
+OPTIONAL MATCH (container)-[:DEPENDS_ON]->(dependency)
+RETURN container, dependency;"
+2026-10-17T15:31:32,fewshot,"{""exclude_secret"": false, ""validate"": false, ""readonly"": false, ""label_rule"": false}",20,vague,Tell me about the neo4j container.,0,False,I don't know about the neo4j container because the database results are empty.,"MATCH (neo4j_container)
+RETURN neo4j_container;"

@@ -6,6 +6,10 @@ Protections are OFF by default (baseline). Turn them on one at a time via .env:
   PROTECT_EXCLUDE_SECRET=1  hide the Secret label from the schema shown to the LLM
   PROTECT_VALIDATE=1        check generated Cypher against an allowlist before it runs
   PROTECT_READONLY=1        run generated Cypher in a read-only session
+
+Prompt switches (not protections; they change what the model sees):
+  PROMPT_LABEL_RULE=1       add a rule: every node in a MATCH pattern gets a label
+  PROMPT_FEWSHOT=1          add worked Cypher examples (Experiment 9, finding 12)
 """
 import os
 from contextvars import ContextVar
@@ -32,6 +36,7 @@ PROTECTIONS = {
 }
 _lr = os.environ.get("PROMPT_LABEL_RULE", "").strip()
 USE_LABEL_RULE = PROTECTIONS["validate"] if _lr == "" else _lr == "1"
+USE_FEWSHOT = os.environ.get("PROMPT_FEWSHOT", "0").strip() == "1"
 import logging
 logger = logging.getLogger("ragsec")
 DEBUG_ERRORS = flag("DEBUG_ERRORS")
@@ -65,12 +70,45 @@ llm = ChatOllama(
     reasoning=False,
 )
 
+
+# Experiment 9: worked examples. Entity names (alpha, beta, ...) and the port number are NOT in the
+# lab database, so the model cannot copy an answer. The patterns cover the failure classes seen in
+# Experiment 8: node variables in parentheses, relationship direction, real property names.
+FEWSHOT_RULE = (
+    "In a WHERE clause, a node variable inside a relationship pattern needs parentheses: "
+    "WHERE (a)-[:REL]->(b).\n"
+)
+FEWSHOT_EXAMPLES = """Examples (the names below are made up):
+
+Question: Which containers run on host alpha?
+Cypher: MATCH (h:Host {name: 'alpha'})-[:RUNS]->(c:Container) RETURN c.name
+
+Question: Which host runs the container beta?
+Cypher: MATCH (h:Host)-[:RUNS]->(c:Container {name: 'beta'}) RETURN h.name
+
+Question: Which container exposes port 1234?
+Cypher: MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 1234}) RETURN c.name
+
+Question: What does the container gamma depend on?
+Cypher: MATCH (c:Container {name: 'gamma'})-[:DEPENDS_ON]->(d:Container) RETURN d.name
+
+Question: Which ports are not public?
+Cypher: MATCH (p:Port) WHERE p.public = false RETURN p.number
+
+Question: Which other containers run on the same host as delta?
+Cypher: MATCH (c:Container {name: 'delta'})<-[:RUNS]-(h:Host)-[:RUNS]->(o:Container) WHERE o.name <> 'delta' RETURN o.name
+
+"""
+# PromptTemplate treats { } as variables, so literal braces must be doubled.
+FEWSHOT_BLOCK = (FEWSHOT_RULE + "\n" + FEWSHOT_EXAMPLES).replace("{", "{{").replace("}", "}}")
+
 LABEL_RULE = "Always give every node in a MATCH pattern a label, for example (c:Container).\n"
 CYPHER_TEMPLATE = (
     "Task: Generate a Cypher query for a Neo4j graph database.\n"
     "Use ONLY the node labels, relationship types and property names that appear in the schema below.\n"
     "Never invent property names. Return only the Cypher query, with no explanation.\n"
     + (LABEL_RULE if USE_LABEL_RULE else "")
+    + (FEWSHOT_BLOCK if USE_FEWSHOT else "")
     + "\nSchema:\n{schema}\n\nQuestion: {question}\nCypher:"
 )
 cypher_prompt = PromptTemplate(input_variables=["schema", "question"], template=CYPHER_TEMPLATE)
@@ -112,7 +150,7 @@ def index():
 
 @app.get("/health")
 def health():
-    return {"ok": True, "protections": {**PROTECTIONS, "label_rule": USE_LABEL_RULE}}
+    return {"ok": True, "protections": {**PROTECTIONS, "label_rule": USE_LABEL_RULE, "fewshot": USE_FEWSHOT}}
 
 @app.post("/seed")
 def seed():
