@@ -3,8 +3,19 @@
 The LLM writes Cypher; this module decides whether that Cypher may run.
 It is a deliberately strict allowlist validator, not a full Cypher parser.
 Known limits are documented in notes/research-daily.md as part of the experiments.
+
+Version history
+  1  Experiments 3c to 14. Allowlist of labels and relationship types, write clauses blocked, node patterns must
+     carry a label. Experiment 15 showed that it let subquery expressions (COLLECT { }, EXISTS { }, COUNT { }),
+     label expressions (:!X, :%, :A&B), and untyped variable-length paths through at the string level.
+  2  Experiment 15 fixes: subquery braces, label expression operators, variable-length patterns and non-identifier
+     labels are blocked; a query length limit is added.
+Resource use (cartesian products, expensive but allowed patterns) is NOT limited here; use database timeouts.
 """
 import re
+
+GUARD_VERSION = 2
+MAX_QUERY_LENGTH = 2000
 
 ALLOWED_LABELS = {"Host", "Container", "Port"}
 ALLOWED_RELS = {"RUNS", "EXPOSES", "DEPENDS_ON"}
@@ -20,6 +31,12 @@ _MAP = re.compile(r"\{[^{}]*\}")
 _TYPE_AFTER_COLON = re.compile(r":\s*([A-Za-z_]\w*)")
 _START = re.compile(r"(?is)^(OPTIONAL\s+)?MATCH\b")
 _NAMESPACED_FUNCTION = re.compile(r"[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)+\s*\(")
+_SUBQUERY_EXPR = re.compile(r"(?i)\b(?:EXISTS|COUNT|COLLECT)\s*\{")
+_BRACE_GROUP = re.compile(r"\{[^{}]*\}")
+_BRACE_CLAUSE = re.compile(r"(?i)\b(?:MATCH|RETURN|WITH|UNWIND|WHERE|UNION)\b")
+_LABEL_EXPR_CHARS = re.compile(r"[&%!]")
+_VAR_LENGTH = re.compile(r"\[[^\]]*\*")
+_COLON_NOT_IDENT = re.compile(r":\s*(?![A-Za-z_])")
 _NODE_PATTERN = re.compile(
     r"(?<![\w])\(\s*([A-Za-z_]\w*)?\s*((?::\s*[A-Za-z_]\w*\s*)*)\)"
 )
@@ -43,6 +60,8 @@ def check_query(query: str):
     """Return None if the query is allowed, otherwise a short reason string."""
     if not query or not query.strip():
         return "empty query"
+    if len(query) > MAX_QUERY_LENGTH:
+        return "query is too long"
     s = _clean(query)
     if "`" in s:
         return "backtick-quoted identifiers are not allowed"
@@ -55,6 +74,15 @@ def check_query(query: str):
         return "namespaced function calls are not allowed"
     if "|" in s:
         return "the pipe character is not allowed (relationship alternation or list comprehension)"
+    if _LABEL_EXPR_CHARS.search(s):
+        return "label expression operators are not allowed"
+    if _VAR_LENGTH.search(s):
+        return "variable-length relationship patterns are not allowed"
+    if _SUBQUERY_EXPR.search(s):
+        return "subquery expressions are not allowed"
+    for group in _BRACE_GROUP.findall(s):
+        if _BRACE_CLAUSE.search(group):
+            return "clauses inside braces are not allowed"
 
     words = {w.upper() for w in re.findall(r"[A-Za-z_]+", s)}
     bad = sorted(words & FORBIDDEN_KEYWORDS)
@@ -66,6 +94,8 @@ def check_query(query: str):
         prev = s
         s = _MAP.sub(" ", s)
 
+    if _COLON_NOT_IDENT.search(s):
+        return "a label or relationship type must be a plain identifier"
     for t in _TYPE_AFTER_COLON.findall(s):
         if t not in ALLOWED_LABELS and t not in ALLOWED_RELS:
             return f"label or relationship type not allowed: {t}"

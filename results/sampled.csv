@@ -1,0 +1,614 @@
+time,qset,model,setting,temperature,rep,id,type,question,correct,strict,category,blocked,answer,cypher
+2026-10-29T19:33:16,large,qwen3.5:4b,none,0.7,1,1,lookup,Which containers run on host pve-node1?,1,1,ok,False,"The containers running on host pve-node1 are redis, postgres, and coolify.","MATCH (h:Host {name: 'pve-node1'})-[:RUNS]->(c:Container)
+RETURN c;"
+2026-10-29T19:33:19,large,qwen3.5:4b,none,0.7,1,3,lookup,What is the operating system of host pve-node1?,1,1,ok,False,The operating system of host pve-node1 is Proxmox VE.,"MATCH (h:Host {name: 'pve-node1'})-[:RUNS]->(c:Container)
+RETURN c.image, h.os;"
+2026-10-29T19:33:23,large,qwen3.5:4b,none,0.7,1,6,lookup,What is the operating system of host pve-node2?,1,1,ok,False,The operating system of host pve-node2 is Proxmox VE.,"MATCH (h:Host {name: 'pve-node2'})
+RETURN h.os;"
+2026-10-29T19:33:26,large,qwen3.5:4b,none,0.7,1,7,lookup,Which containers run on host senku02?,0,0,error,False,The query could not be completed.,"MATCH (host:Host {name: ""senku02""}), (container:Container)
+WHERE host-RUNS->container
+RETURN container.name, container.status"
+2026-10-29T19:33:29,large,qwen3.5:4b,none,0.7,1,8,count,How many containers does senku02 run?,1,1,ok,False,senku02 runs 2 containers.,"MATCH (host:Host {name: 'senku02'})-[:RUNS]->(container:Container)
+RETURN count(container) as cnt;"
+2026-10-29T19:33:33,large,qwen3.5:4b,none,0.7,1,13,lookup,Which containers run on host edge01?,0,0,wrong,False,"The running containers on host edge01 are uptime-kuma, traefik, and vaultwarden.","MATCH (host:Host {name: 'edge01'})-[:RUNS]->(container:Container)
+RETURN container;"
+2026-10-29T19:33:36,large,qwen3.5:4b,none,0.7,1,16,lookup,Which host runs the coolify container?,1,1,ok,False,The coolify container runs on host pve-node1.,"MATCH (h:Host)-[:RUNS]->(c:Container {name: 'coolify'})
+RETURN h.name, c.name"
+2026-10-29T19:33:40,large,qwen3.5:4b,none,0.7,1,17,lookup,What image does the coolify container use?,0,0,abstain,False,"The provided results do not include information about the Coolify container image, so I don't know.","MATCH (c:Container {name: 'coolify'})-[:DEPENDS_ON]->(d:Container)
+RETURN d.image as image"
+2026-10-29T19:33:43,large,qwen3.5:4b,none,0.7,1,24,lookup,Which port does the postgres container expose?,0,0,abstain,False,I don't know which port the postgres container exposes because the provided database results are empty.,"MATCH (host:Host {name: 'postgres'})-[:RUNS]->(container:Container {name: 'postgres'})-[:EXPOSES]->(port:Port)
+RETURN port"
+2026-10-29T19:33:47,large,qwen3.5:4b,none,0.7,1,25,negative,What does the postgres container depend on?,1,0,error,False,The query could not be completed.,"MATCH (h:Host {name: ""postgres""})-[:RUNS]->(c:Container {image: ""postgres""}), c<-[]-(d:Container)-[:DEPENDS_ON]->(:Container)
+RETURN d.name"
+2026-10-29T19:33:50,large,qwen3.5:4b,none,0.7,1,27,lookup,What image does the redis container use?,1,1,ok,False,The redis container uses the redis:7 image.,"MATCH (c:Container {name: 'redis'})
+RETURN c.image"
+2026-10-29T19:33:53,large,qwen3.5:4b,none,0.7,1,29,lookup,Which port does the redis container expose?,1,1,ok,False,The redis container exposes port 6379 over TCP.,"MATCH (c:Container {name: 'redis'})-[:EXPOSES]->(p:Port)
+RETURN p.number, p.protocol"
+2026-10-29T19:33:56,large,qwen3.5:4b,none,0.7,1,30,negative,What does the redis container depend on?,1,1,ok,False,The redis container depends on nothing.,"MATCH (r :Container {name: 'redis'})-[:DEPENDS_ON]->(d :Container)
+RETURN d.name as depends_on_name, r.image as redis_container"
+2026-10-29T19:34:00,large,qwen3.5:4b,none,0.7,1,31,lookup,On which host does the grafana container run?,0,0,abstain,False,I don't know.,"MATCH (host:Host {name: 'grafana-host'}), (container:Container {name: 'grafana-container'})
+WHERE (host)-[:RUNS]->(container)
+RETURN host.name, container.name;"
+2026-10-29T19:34:04,large,qwen3.5:4b,none,0.7,1,35,lookup,What does the grafana container depend on?,1,1,ok,False,"The Grafana container depends on loki, which is stopped, and prometheus, which is running.","MATCH (c:Container {name: 'grafana'})-[:DEPENDS_ON]->(dep:Container)
+RETURN dep.name AS dependency_name, dep.status AS status;"
+2026-10-29T19:34:07,large,qwen3.5:4b,none,0.7,1,38,lookup,What status does the prometheus container have?,1,1,ok,False,The prometheus container is running.,MATCH (c:Container {name: 'prometheus'}) RETURN c.status;
+2026-10-29T19:34:10,large,qwen3.5:4b,none,0.7,1,43,lookup,What status does the loki container have?,0,0,abstain,False,I don't know.,"MATCH (c:Container {name: 'loki'})-[:DEPENDS_ON*]->(c)
+RETURN c.status"
+2026-10-29T19:34:13,large,qwen3.5:4b,none,0.7,1,45,lookup,What does the loki container depend on?,1,1,ok,False,The loki container depends on minio.,"MATCH (l:Container {name: 'loki'})
+MATCH (l)-[:DEPENDS_ON]->(d:Container)
+RETURN d.name"
+2026-10-29T19:34:17,large,qwen3.5:4b,none,0.7,1,54,lookup,Which port does the open-webui container expose?,0,0,abstain,False,I don't know which port the open-webui container exposes because the database query returned no results.,"MATCH (host:Host), (container:Container {name: 'open-webui'})-[:RUNS]->(container)-[:EXPOSES]->(port:Port)
+RETURN port.public, port.number, port.protocol;"
+2026-10-29T19:34:21,large,qwen3.5:4b,none,0.7,1,55,lookup,What does the open-webui container depend on?,1,1,ok,False,The open-webui container depends on ollama and is currently running.,"MATCH (c:Container {name: ""open-webui""})-[:DEPENDS_ON]->(dep:Container)
+RETURN dep.name AS depends_on_name, dep.status AS status"
+2026-10-29T19:34:24,large,qwen3.5:4b,none,0.7,1,56,lookup,Which host runs the minio container?,0,0,abstain,False,I don't know.,"MATCH (h:Host {name: 'minio'})-[:RUNS]->(c:Container {name: 'minio'})
+RETURN h.name, c.name;"
+2026-10-29T19:34:27,large,qwen3.5:4b,none,0.7,1,57,lookup,What image does the minio container use?,0,0,abstain,False,I don't know.,"MATCH (c:Container {name: ""minio""})-[:DEPENDS_ON]->(dep:c:Container)
+RETURN dep.image"
+2026-10-29T19:34:31,large,qwen3.5:4b,none,0.7,1,59,lookup,Which ports does the minio container expose?,1,1,ok,False,The minio container exposes ports 9000 and 9001.,"MATCH (container {name: 'minio'})-[:EXPOSES]->(port)
+RETURN port.number, port.protocol, port.public"
+2026-10-29T19:34:34,large,qwen3.5:4b,none,0.7,1,64,lookup,Which port does the nextcloud container expose?,1,1,ok,False,The nextcloud container exposes port 8080 using TCP.,"MATCH (c:Container {name: 'nextcloud'})-[:EXPOSES]->(p:Port)
+RETURN p"
+2026-10-29T19:34:38,large,qwen3.5:4b,none,0.7,1,65,lookup,What does the nextcloud container depend on?,1,1,ok,False,"The nextcloud container depends on minio, redis, and postgres.","MATCH (c1:Container {name: ""nextcloud""})-[:DEPENDS_ON]->(c2:Container)
+RETURN c2.name AS dependent_container, c2.image AS image, c2.status AS status"
+2026-10-29T19:34:41,large,qwen3.5:4b,none,0.7,1,66,lookup,Which host runs the gitea container?,0,0,error,False,The query could not be completed.,"MATCH (host:Host), (container:Container {name: 'gitea'})
+WHERE host-RUNS-container
+RETURN host.name"
+2026-10-29T19:34:44,large,qwen3.5:4b,none,0.7,1,69,lookup,Which port does the gitea container expose?,1,1,ok,False,The gitea container exposes port 3000.,"MATCH (c:Container {name: ""gitea""})-[:EXPOSES]->(p:Port)
+RETURN p.number, p.public, p.protocol"
+2026-10-29T19:34:47,large,qwen3.5:4b,none,0.7,1,71,lookup,On which host does the traefik container run?,0,0,error,False,The query could not be completed.,"MATCH (h:Host), (c:Container {name: 'traefik'})
+WHERE h-RUNS->c
+RETURN h.name AS HostName"
+2026-10-29T19:34:50,large,qwen3.5:4b,none,0.7,1,72,lookup,What image does the traefik container use?,0,0,abstain,False,I don't know.,"MATCH (c:Container {name: 'traefik'})-[:DEPENDS_ON]->(d:Container)
+RETURN d.image as image"
+2026-10-29T19:34:54,large,qwen3.5:4b,none,0.7,1,81,lookup,On which host does the uptime-kuma container run?,1,1,ok,False,The uptime-kuma container runs on edge01.,"MATCH (h:Host)-[:RUNS]->(c:Container {name: 'uptime-kuma'})
+RETURN h.name"
+2026-10-29T19:34:57,large,qwen3.5:4b,none,0.7,1,82,lookup,What image does the uptime-kuma container use?,1,1,ok,False,The uptime-kuma container uses the louislam/uptime-kuma:1 image.,"MATCH (c:Container {name: 'uptime-kuma'})
+RETURN c.image AS image_name"
+2026-10-29T19:35:00,large,qwen3.5:4b,none,0.7,1,83,lookup,What status does the uptime-kuma container have?,0,0,abstain,False,I don't know the status of the uptime-kuma container because the query results were empty.,"MATCH (h:Host {name: ""uptime-kuma""})-[:RUNS]->(c:Container)
+RETURN c.status"
+2026-10-29T19:35:04,large,qwen3.5:4b,none,0.7,1,87,lookup,What image does the mailpit container use?,0,0,abstain,False,I don't know.,"MATCH (h:Host), (c:Container {name: 'mailpit'}) WHERE h.os = 'linux' AND c.image = 'osdev/mailpit:latest' RETURN c.name, h.name, c.image"
+2026-10-29T19:35:07,large,qwen3.5:4b,none,0.7,1,92,lookup,Which containers depend on redis?,0,0,error,False,The query could not be completed.,"MATCH (container1:Container), (container2:Container)
+WHERE container1.image = 'redis'
+  AND container2:DEPENDS_ON<-[]-container1
+RETURN container1.name, container2.name"
+2026-10-29T19:35:10,large,qwen3.5:4b,none,0.7,1,93,lookup,Which containers depend on prometheus?,0,0,denial,False,No containers depend on prometheus.,"MATCH (c:Container {name: 'prometheus'})<-[:DEPENDS_ON]-(dep:c)
+RETURN dep.name AS dependent_container"
+2026-10-29T19:35:13,large,qwen3.5:4b,none,0.7,1,96,lookup,Which containers depend on minio?,0,0,error,False,The query could not be completed.,"MATCH (container:Container {name: 'minio'})<-[]-(otherContainer:Container)
+RETURN otherContainer.name, container.name
+WHERE otherContainer <> container"
+2026-10-29T19:35:17,large,qwen3.5:4b,none,0.7,1,98,lookup,Which containers expose port 443?,1,1,ok,False,The container traefik exposes port 443.,"MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 443})
+RETURN c.name AS ContainerName, p.public AS IsPublic;"
+2026-10-29T19:35:20,large,qwen3.5:4b,none,0.7,1,100,lookup,Which containers expose port 3000?,0,0,denial,False,None of the containers in the results expose port 3000.,"MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 3000})
+RETURN c.name, c.status"
+2026-10-29T19:35:24,large,qwen3.5:4b,none,0.7,1,106,lookup,Which containers expose port 8000?,1,1,ok,False,The coolify container exposes port 8000.,"MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 8000})
+RETURN c.name AS container_name, p.public AS is_public"
+2026-10-29T19:35:27,large,qwen3.5:4b,none,0.7,1,108,lookup,Which containers expose port 8080?,0,0,abstain,False,"The provided results do not indicate which containers expose port 8080, so I don't know.",MATCH (c:Container)-[:EXPOSES]->(p:Port) WHERE p.number = 8080 RETURN c
+2026-10-29T19:35:30,large,qwen3.5:4b,none,0.7,1,109,lookup,Which containers expose port 8081?,0,0,error,False,The query could not be completed.,"MATCH (c:Container), (p:Port)
+WHERE c.exposes p AND p.number = 8081
+RETURN c.name"
+2026-10-29T19:35:34,large,qwen3.5:4b,none,0.7,1,111,lookup,Which containers expose port 9001?,1,1,ok,False,The container that exposes port 9001 is minio.,"MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 9001})
+RETURN c.name, p.public, p.protocol;"
+2026-10-29T19:35:37,large,qwen3.5:4b,none,0.7,1,115,count,How many ports are public?,0,0,wrong,False,There is 1 public port.,"MATCH (p:Port {public: true})
+RETURN COUNT(p) AS num_public_ports;"
+2026-10-29T19:35:40,large,qwen3.5:4b,none,0.7,1,116,count,How many containers are running?,0,0,wrong,False,There are 0 containers running.,"MATCH (c:Container {status: 'Running'})
+RETURN count(c)"
+2026-10-29T19:35:43,large,qwen3.5:4b,none,0.7,1,121,list,List all hosts.,1,1,ok,False,"The hosts are pve-node1, pve-node2, senku02, nas01, and edge01.","MATCH (h:Host)
+RETURN h.name, h.os;"
+2026-10-29T19:35:47,large,qwen3.5:4b,none,0.7,1,122,two-hop,Which hosts run the containers that coolify depends on?,1,1,ok,False,The host pve-node1 runs the container coolify.,"MATCH (h:Host)
+MATCH (c1:Container)-[:DEPENDS_ON]->(c2:Container)
+MATCH (c1)<-[:RUNS]-(h)
+RETURN h.name AS HostName, c1.name AS ContainerName"
+2026-10-29T19:35:50,large,qwen3.5:4b,none,0.7,1,125,two-hop,Which hosts run the containers that open-webui depends on?,0,0,error,False,The query could not be completed.,"MATCH p = path(:Host)-[:RUNS]->(:Container)-[:DEPENDS_ON]->(:Container)
+RETURN p[0].name AS host_name"
+2026-10-29T19:35:54,large,qwen3.5:4b,none,0.7,1,127,two-hop,Which hosts run the containers that gitea depends on?,0,0,wrong,False,No hosts run the containers that gitea depends on based on the provided results.,"MATCH (host:Host {name: ""gitea""})<-[:RUNS]-(container1:Container)<-[:DEPENDS_ON]-()
+RETURN host.name, container1.name"
+2026-10-29T19:35:57,large,qwen3.5:4b,none,0.7,1,128,two-hop,Which other containers run on the same host as coolify?,0,0,error,False,The query could not be completed.,"MATCH (h:Host {name: 'coolify'})-[:RUNS]->(c1:Container),
+       (c1)-[:DEPENDS_ON]->(c2)
+RETURN c2.name
+WHERE c1 <> c2"
+2026-10-29T19:36:00,large,qwen3.5:4b,none,0.7,1,132,two-hop,Which other containers run on the same host as prometheus?,0,0,wrong,False,No information is available to answer this question.,"MATCH (p:Host), (c1:Container {name: 'prometheus'}) WHERE p.name = c1.name RETURN c1;"
+2026-10-29T19:36:04,large,qwen3.5:4b,none,0.7,1,133,two-hop,Which other containers run on the same host as loki?,0,0,denial,False,No other containers run on the same host as loki.,"MATCH (l:Host {name: 'loki'})-[:RUNS]->(c1:Container), (c2:Container)
+WHERE c1 <> c2
+RETURN c2.name, c1.name
+ORDER BY c2.name
+LIMIT 50"
+2026-10-29T19:36:08,large,qwen3.5:4b,none,0.7,1,136,two-hop,Which other containers run on the same host as minio?,0,0,denial,False,No other containers run on the same host as minio.,"MATCH (h:Host {name: 'minio'})-[:RUNS]->(c1:Container), (h)-[:RUNS]->(c2:Container)
+WHERE c1 <> c2
+RETURN c2;"
+2026-10-29T19:36:12,large,qwen3.5:4b,none,0.7,1,139,two-hop,Which other containers run on the same host as traefik?,1,1,ok,False,"The other containers running on the same host as traefik are vaultwarden, uptime-kuma, and mailpit.","MATCH (h:Host), (c1:Container {name: 'traefik'}), (c2:Container)
+WHERE (h)-[:RUNS]->(c1) AND (h)-[:RUNS]->(c2)
+RETURN c2.name"
+2026-10-29T19:36:15,large,qwen3.5:4b,none,0.7,1,141,two-hop,Which other containers run on the same host as uptime-kuma?,0,0,error,False,The query could not be completed.,"MATCH (host:Host {name: ""uptime-kuma""})-[:RUNS]-(c1:Container)
+OPTIONAL MATCH (host)-[:RUNS]-(c2:Container)
+WHERE c2 != c1
+RETURN c2.name AS OtherContainers"
+2026-10-29T19:36:19,large,qwen3.5:4b,none,0.7,1,145,two-hop,Which containers depend on a container that runs on senku02?,1,1,ok,False,"The open-webui container depends on the ollama container, which runs on senku02.","MATCH (c1:Container)-[:DEPENDS_ON]->(c2:Container)
+MATCH (h:Host {name: 'senku02'})-[:RUNS]->(c2)
+RETURN c1.name, c2.name"
+2026-10-29T19:36:23,large,qwen3.5:4b,none,0.7,1,146,two-hop,Which containers depend on a container that runs on nas01?,0,0,abstain,False,I don't know.,"MATCH (c:Container {status: 'running'})-[:DEPENDS_ON]->(dep:Container)-[:RUNS]->(h:Host {name: 'nas01'})
+RETURN c.name, dep.name"
+2026-10-29T19:36:26,large,qwen3.5:4b,none,0.7,1,148,two-hop,Which port does the container that loki depends on expose?,0,0,abstain,False,I don't know.,"MATCH (c1:Container {name: ""loki""})
+MATCH (c2:Container)-[:DEPENDS_ON]->(c2)
+MATCH (p:Port)-[r:EXPOSES]->(c2)
+RETURN p.number, r"
+2026-10-29T19:36:30,large,qwen3.5:4b,none,0.7,1,149,two-hop,Which port does the container that open-webui depends on expose?,1,1,ok,False,The container exposes port 11434.,"MATCH (c1:Container {name: ""open-webui""})-[:DEPENDS_ON]->(c2:Container)-[:EXPOSES]->(p:Port)
+RETURN p.number, p.protocol"
+2026-10-29T19:36:33,large,qwen3.5:4b,none,0.7,1,150,negative,Which container exposes port 9999?,1,1,ok,False,No containers expose port 9999.,"MATCH (c:Container {image: 'nginx'})-[:EXPOSES]->(p:Port {number: 9999}) RETURN c.image, p.public"
+2026-10-29T19:36:37,large,qwen3.5:4b,none,0.7,1,152,negative,Which containers depend on mailpit?,0,0,abstain,False,I don't know because the database results are empty.,"MATCH (c1:Container {name: 'mailpit'})-[:DEPENDS_ON]->(c2:Container)
+RETURN c2"
+2026-10-29T19:36:40,large,qwen3.5:4b,none,0.7,2,1,lookup,Which containers run on host pve-node1?,0,0,error,False,The query could not be completed.,"MATCH (h:Host {name: 'pve-node1'}), (c:Container)
+WHERE h-RUNS->c
+RETURN c.name, c.status"
+2026-10-29T19:36:43,large,qwen3.5:4b,none,0.7,2,3,lookup,What is the operating system of host pve-node1?,1,1,ok,False,The operating system of host pve-node1 is Proxmox VE.,"MATCH (h:Host {name: 'pve-node1'})
+RETURN h.os;"
+2026-10-29T19:36:46,large,qwen3.5:4b,none,0.7,2,6,lookup,What is the operating system of host pve-node2?,1,1,ok,False,The operating system of host pve-node2 is Proxmox VE.,"MATCH (h:Host {name: ""pve-node2""}) RETURN h.os;"
+2026-10-29T19:36:50,large,qwen3.5:4b,none,0.7,2,7,lookup,Which containers run on host senku02?,1,1,ok,False,The containers running on host senku02 are open-webui and ollama.,"MATCH (h:Host {name: ""senku02""})-[:RUNS]->(c:Container)
+RETURN c.name, c.image, c.status;"
+2026-10-29T19:36:53,large,qwen3.5:4b,none,0.7,2,8,count,How many containers does senku02 run?,0,0,error,False,The query could not be completed.,"MATCH p=(senku02:Host {name: ""senku02""})
+MATCH (p)-[r:RUNS]->(c:Container)
+RETURN count(c) AS num_containers"
+2026-10-29T19:36:56,large,qwen3.5:4b,none,0.7,2,13,lookup,Which containers run on host edge01?,0,0,error,False,The query could not be completed.,"MATCH (h:Host {name: 'edge01'}), (c:Container)
+WHERE h-RUNS->c
+RETURN c.name, c.image, c.status"
+2026-10-29T19:36:59,large,qwen3.5:4b,none,0.7,2,16,lookup,Which host runs the coolify container?,0,0,error,False,The query could not be completed.,"MATCH (h:Host)-[:RUNS]->(c:Container {name: 'coolify'})
+RETURN h
+```"
+2026-10-29T19:37:02,large,qwen3.5:4b,none,0.7,2,17,lookup,What image does the coolify container use?,0,0,abstain,False,I don't know.,"MATCH (c:Container {name: 'coolify'})-[:DEPENDS_ON]->(dep:c)
+RETURN dep.image AS used_image;"
+2026-10-29T19:37:06,large,qwen3.5:4b,none,0.7,2,24,lookup,Which port does the postgres container expose?,1,1,ok,False,The postgres container exposes port 5432 over TCP.,"MATCH (c:Container {name: 'postgres'})
+OPTIONAL MATCH (c)-[:EXPOSES]->(p:Port)
+RETURN p"
+2026-10-29T19:37:09,large,qwen3.5:4b,none,0.7,2,25,negative,What does the postgres container depend on?,0,0,abstain,False,I don't know what the postgres container depends on because the results are empty.,"MATCH (container:Container {name: 'postgres'})-[:DEPENDS_ON]->(depContainer:Container)
+RETURN depContainer.name AS dependent_container_name, depContainer.image AS dependent_image;"
+2026-10-29T19:37:12,large,qwen3.5:4b,none,0.7,2,27,lookup,What image does the redis container use?,1,1,ok,False,The redis container uses the redis:7 image.,"MATCH (c:Container {name: 'redis'})
+RETURN c.image"
+2026-10-29T19:37:15,large,qwen3.5:4b,none,0.7,2,29,lookup,Which port does the redis container expose?,1,1,ok,False,The redis container exposes port 6379.,"MATCH (c:Container {name: 'redis'})-[:EXPOSES]->(p:Port)
+RETURN p"
+2026-10-29T19:37:19,large,qwen3.5:4b,none,0.7,2,30,negative,What does the redis container depend on?,0,0,abstain,False,I don't know because the results are empty.,"MATCH (c1:Container {name: 'redis'})-[:DEPENDS_ON]->(c2:Container)
+RETURN c2.name AS depends_on_container, c2.status AS status"
+2026-10-29T19:37:22,large,qwen3.5:4b,none,0.7,2,31,lookup,On which host does the grafana container run?,0,0,error,False,The query could not be completed.,"MATCH (h:Host), (c:Container {name: 'grafana'}) WHERE h <--> c RETURN h.os, h.name;"
+2026-10-29T19:37:26,large,qwen3.5:4b,none,0.7,2,35,lookup,What does the grafana container depend on?,0,0,wrong,False,"The grafana container depends on coolify, loki, and open-webui.","MATCH (container:Container {name: 'grafana'})
+CALL {
+  MATCH (dep:Container)-[:DEPENDS_ON]->()
+  RETURN dep.name AS dependency_name
+}
+RETURN dependency_name"
+2026-10-29T19:37:29,large,qwen3.5:4b,none,0.7,2,38,lookup,What status does the prometheus container have?,0,0,abstain,False,I don't know the status of the prometheus container because the database results are empty.,"MATCH (h:Host {name: 'prometheus'})-[:RUNS]->(c:Container)
+RETURN c.status;"
+2026-10-29T19:37:33,large,qwen3.5:4b,none,0.7,2,43,lookup,What status does the loki container have?,0,0,abstain,False,I don't know the status of the loki container because the database results are empty.,"MATCH (c:Container {name: 'loki'})-[:DEPENDS_ON]->(dep:Container)<-[:EXPOSES]-(p:Port {public: true})
+RETURN c.status"
+2026-10-29T19:37:36,large,qwen3.5:4b,none,0.7,2,45,lookup,What does the loki container depend on?,1,1,ok,False,The loki container depends on minio.,"MATCH (l:Container {name: 'loki'})-[:DEPENDS_ON]->(dep)
+RETURN dep.name AS depends_on"
+2026-10-29T19:37:40,large,qwen3.5:4b,none,0.7,2,54,lookup,Which port does the open-webui container expose?,1,1,ok,False,The open-webui container exposes port 8080 over TCP.,"MATCH (c:Container {name: ""open-webui""})-[:EXPOSES]->(p:Port)
+RETURN p.number, p.protocol"
+2026-10-29T19:37:43,large,qwen3.5:4b,none,0.7,2,55,lookup,What does the open-webui container depend on?,1,1,ok,False,"The open-webui container depends on ollama, which is currently running.","MATCH (container {name: ""open-webui""})-[:DEPENDS_ON]->(depended_container)
+RETURN depended_container.name, depended_container.status"
+2026-10-29T19:37:47,large,qwen3.5:4b,none,0.7,2,56,lookup,Which host runs the minio container?,0,0,wrong,False,No results match this query.,"MATCH (host:Host {name: 'minio-host'}), (container:Container {image: 'minio'})
+WHERE (host)-[:RUNS]->(container)
+RETURN host.name, container.image;"
+2026-10-29T19:37:50,large,qwen3.5:4b,none,0.7,2,57,lookup,What image does the minio container use?,1,1,ok,False,The minio container uses the minio/minio:latest image.,"MATCH (c:Container {name: 'minio'})
+RETURN c.image"
+2026-10-29T19:37:54,large,qwen3.5:4b,none,0.7,2,59,lookup,Which ports does the minio container expose?,1,1,ok,False,The MinIO container exposes ports 9001 and 9000.,"MATCH (c:Container {name: 'minio'})-[:EXPOSES]->(p:Port)
+RETURN p.public, p.number, p.protocol"
+2026-10-29T19:37:57,large,qwen3.5:4b,none,0.7,2,64,lookup,Which port does the nextcloud container expose?,1,1,ok,False,The nextcloud container exposes port 8080 on the tcp protocol.,"MATCH (c:Container {name: ""nextcloud""})-[:EXPOSES]->(p:Port)
+RETURN p"
+2026-10-29T19:38:01,large,qwen3.5:4b,none,0.7,2,65,lookup,What does the nextcloud container depend on?,0,0,error,False,The query could not be completed.,"MATCH (n:Container {name: 'nextcloud'})
+CALL {
+  MATCH (c:Container)
+  WHERE (n)-[:DEPENDS_ON]->(c)
+  RETURN c.image AS image, c.name AS name
+}"
+2026-10-29T19:38:04,large,qwen3.5:4b,none,0.7,2,66,lookup,Which host runs the gitea container?,0,0,error,False,The query could not be completed.,"MATCH (h:Host), (c:Container {name: 'gitea'})
+WHERE h-RUNS->c
+RETURN h.name, c.name"
+2026-10-29T19:38:07,large,qwen3.5:4b,none,0.7,2,69,lookup,Which port does the gitea container expose?,1,1,ok,False,The gitea container exposes port 3000 over TCP.,"MATCH (giteaContainer:Container {name: 'gitea'})-[:EXPOSES]->(port:Port)
+RETURN port;"
+2026-10-29T19:38:10,large,qwen3.5:4b,none,0.7,2,71,lookup,On which host does the traefik container run?,0,0,abstain,False,I don't know.,"MATCH (h:Host {name: 'traefik'})-[:RUNS]->(c:Container {name: 'traefik'})
+RETURN h.name, c.name"
+2026-10-29T19:38:14,large,qwen3.5:4b,none,0.7,2,72,lookup,What image does the traefik container use?,1,1,ok,False,The traefik container uses the image traefik:v3.,"MATCH (h:Host)-[:RUNS]->(c:Container {name: 'traefik'})
+RETURN c.image;"
+2026-10-29T19:38:17,large,qwen3.5:4b,none,0.7,2,81,lookup,On which host does the uptime-kuma container run?,0,0,abstain,False,I don't know the host where the uptime-kuma container runs because the provided database results are empty.,"MATCH (container:Container {name: 'uptime-kuma'})-[:RUNS]->(host:Host)
+RETURN host.name AS host_name;"
+2026-10-29T19:38:21,large,qwen3.5:4b,none,0.7,2,82,lookup,What image does the uptime-kuma container use?,1,1,ok,False,The uptime-kuma container uses the louislam/uptime-kuma:1 image.,"MATCH (c:Container {name: 'uptime-kuma'})
+RETURN c.image"
+2026-10-29T19:38:24,large,qwen3.5:4b,none,0.7,2,83,lookup,What status does the uptime-kuma container have?,1,1,ok,False,The uptime-kuma container is running.,"MATCH (c:Container {name: ""uptime-kuma""})
+RETURN c.status;"
+2026-10-29T19:38:27,large,qwen3.5:4b,none,0.7,2,87,lookup,What image does the mailpit container use?,1,1,ok,False,The mailpit container uses the axllent/mailpit:v1 image.,"MATCH (c:Container {name: 'mailpit'})
+RETURN c.image"
+2026-10-29T19:38:31,large,qwen3.5:4b,none,0.7,2,92,lookup,Which containers depend on redis?,1,1,ok,False,The containers depending on redis are nextcloud and coolify.,"MATCH (c:Container {name: 'redis'})
+WHERE c.name = 'redis'
+OPTIONAL MATCH (d:Container)-[:DEPENDS_ON]->(c)
+RETURN d.name AS Container_Name, d.status AS Container_Status"
+2026-10-29T19:38:34,large,qwen3.5:4b,none,0.7,2,93,lookup,Which containers depend on prometheus?,1,1,ok,False,The container that depends on prometheus is grafana.,"MATCH (c1:Container {name: 'prometheus'})<-[:DEPENDS_ON]-(c2:Container)
+RETURN c2.name, c2.image"
+2026-10-29T19:38:38,large,qwen3.5:4b,none,0.7,2,96,lookup,Which containers depend on minio?,1,1,ok,False,The containers that depend on minio are loki and nextcloud.,"MATCH (c:Container {name: 'minio'})<-[:DEPENDS_ON]-(other:Container)
+RETURN other.name, c.name;"
+2026-10-29T19:38:41,large,qwen3.5:4b,none,0.7,2,98,lookup,Which containers expose port 443?,1,1,ok,False,The container named traefik exposes port 443.,"MATCH (c:Container {status: ""running""})-[r:EXPOSES]->(p:Port {number: 443})
+RETURN c.name, p.public"
+2026-10-29T19:38:45,large,qwen3.5:4b,none,0.7,2,100,lookup,Which containers expose port 3000?,0,0,denial,False,The provided results do not indicate which containers expose port 3000.,MATCH (c:Container)-[:EXPOSES]->(p:Port) WHERE p.number = 3000 RETURN c
+2026-10-29T19:38:48,large,qwen3.5:4b,none,0.7,2,106,lookup,Which containers expose port 8000?,0,0,denial,False,No containers expose port 8000.,"MATCH (c:Container {status: 'exposed'})-[:EXPOSES]->(p:Port {number: 8000})
+RETURN c.name"
+2026-10-29T19:38:51,large,qwen3.5:4b,none,0.7,2,108,lookup,Which containers expose port 8080?,0,0,denial,False,The database results do not indicate which containers expose port 8080.,MATCH (c:Container)-[:EXPOSES]->(p:Port) WHERE p.number = 8080 RETURN c
+2026-10-29T19:38:55,large,qwen3.5:4b,none,0.7,2,109,lookup,Which containers expose port 8081?,0,0,error,False,The query could not be completed.,"MATCH (c:Container), (p:Port {number: 8081})
+WHERE c-[:EXPOSES]->p
+RETURN c.name, p.public"
+2026-10-29T19:38:58,large,qwen3.5:4b,none,0.7,2,111,lookup,Which containers expose port 9001?,0,0,denial,False,No containers expose port 9001.,"MATCH (c:Container {status: ""exposed""}), (p:Port {number: 9001}) WHERE c.image = p.image RETURN c.name, c.status"
+2026-10-29T19:39:01,large,qwen3.5:4b,none,0.7,2,115,count,How many ports are public?,0,0,wrong,False,There is 1 public port.,"MATCH (p:Port {public: true})
+RETURN count(p) as public_ports_count;"
+2026-10-29T19:39:04,large,qwen3.5:4b,none,0.7,2,116,count,How many containers are running?,0,0,wrong,False,There are zero containers running.,"MATCH (c:Container)
+WHERE c.status = 'RUNNING'
+RETURN count(c) as container_count"
+2026-10-29T19:39:08,large,qwen3.5:4b,none,0.7,2,121,list,List all hosts.,1,1,ok,False,"The infrastructure graph includes the following hosts: pve-node1, pve-node2, senku02, nas01, and edge01.","MATCH (h:Host)
+RETURN h.name, h.os;"
+2026-10-29T19:39:12,large,qwen3.5:4b,none,0.7,2,122,two-hop,Which hosts run the containers that coolify depends on?,1,1,ok,False,The host pve-node1 runs the containers that coolify depends on.,"MATCH (host:Host)
+MATCH (container1:Container)
+MATCH (container2:Container)
+MATCH (container1)-[:DEPENDS_ON]->(container2)
+MATCH (host)-[:RUNS]->(container1)
+
+RETURN host.name, container1.name, container2.name;"
+2026-10-29T19:39:16,large,qwen3.5:4b,none,0.7,2,125,two-hop,Which hosts run the containers that open-webui depends on?,0,0,error,False,The query could not be completed.,"MATCH (host:Host), (container1:Container {name: 'open-webui'}), (container2:Container), (dep:Container)-[:DEPENDS_ON]->(container2)
+WHERE container1<-[:RUNS]-(host)
+RETURN host.name"
+2026-10-29T19:39:19,large,qwen3.5:4b,none,0.7,2,127,two-hop,Which hosts run the containers that gitea depends on?,1,1,ok,False,The host pve-node1 runs the containers that gitea depends on.,"MATCH (gitea:Container {name: 'gitea'})
+-[r1:DEPENDS_ON]->(container:Container)
+<-[:RUNS]-(host:Host)
+RETURN host"
+2026-10-29T19:39:23,large,qwen3.5:4b,none,0.7,2,128,two-hop,Which other containers run on the same host as coolify?,0,0,error,False,The query could not be completed.,"MATCH (h:Host {name: 'coolify'})-[:RUNS]->(c1:Container), c1-[:DEPENDS_ON]->(c2)
+WHERE c1 <> c2
+RETURN c2.name, c2.status;"
+2026-10-29T19:39:26,large,qwen3.5:4b,none,0.7,2,132,two-hop,Which other containers run on the same host as prometheus?,0,0,error,False,The query could not be completed.,"MATCH (host:Host {name: 'prometheus'})
+MATCH (container:Container)-[:RUNS]->(host)<-[RUNS]-(other-container:Container)
+RETURN other-container.name, other-container.image, other-container.status;"
+2026-10-29T19:39:30,large,qwen3.5:4b,none,0.7,2,133,two-hop,Which other containers run on the same host as loki?,0,0,denial,False,No other containers run on the same host as loki.,"MATCH (l:Host {name: 'loki'})-[:RUNS]->(c1:Container)-[:DEPENDS_ON]->(c2:Container)
+WHERE c1 <> c2
+RETURN c2.name, c2.image"
+2026-10-29T19:39:33,large,qwen3.5:4b,none,0.7,2,136,two-hop,Which other containers run on the same host as minio?,0,0,abstain,False,I don't know.,"MATCH (h:Host {name: 'minio'})-[:RUNS]->(c1:Container)-[:DEPENDS_ON]->(c2:Container)
+WHERE c1 <> c2
+RETURN c2.name AS ContainerName;"
+2026-10-29T19:39:37,large,qwen3.5:4b,none,0.7,2,139,two-hop,Which other containers run on the same host as traefik?,0,0,denial,False,No other containers are running on the same host as traefik.,"MATCH (t:Container {name: 'traefik'})-[:RUNS]->(h:Host)-[:RUNS]->(:Container)
+WHERE t <> h
+RETURN h.name"
+2026-10-29T19:39:41,large,qwen3.5:4b,none,0.7,2,141,two-hop,Which other containers run on the same host as uptime-kuma?,0,0,denial,False,No other containers run on the same host as uptime-kuma.,"MATCH (u:Host)-[:RUNS]->(c1:Container {name: 'uptime-kuma'})-[:DEPENDS_ON]->(c2:Container)
+WHERE c1 <> c2
+RETURN c2.name, c1.name"
+2026-10-29T19:39:45,large,qwen3.5:4b,none,0.7,2,145,two-hop,Which containers depend on a container that runs on senku02?,0,0,wrong,False,The container dependent on one running on senku02 is ollama.,"MATCH (h:Host {name: 'senku02'})-[:RUNS]->(c1:Container)
+MATCH (c1)-[:DEPENDS_ON]->(c2:Container)
+RETURN c2.name AS dependent_container_name, c1.name AS depended_container_name"
+2026-10-29T19:39:49,large,qwen3.5:4b,none,0.7,2,146,two-hop,Which containers depend on a container that runs on nas01?,0,0,denial,False,The database results do not indicate any dependencies between containers.,"MATCH (h:Host {name: 'nas01'})-[:RUNS]->(c1:Container)
+MATCH (c2:Container)-[:DEPENDS_ON]->(c1)
+RETURN c2"
+2026-10-29T19:39:52,large,qwen3.5:4b,none,0.7,2,148,two-hop,Which port does the container that loki depends on expose?,1,1,ok,False,The container that loki depends on exposes ports 9000 and 9001.,"MATCH (l:Container {name: 'loki'})-[:DEPENDS_ON]->(dep:Container)-[:EXPOSES]->(p:Port)
+RETURN p.number AS port_number;"
+2026-10-29T19:39:56,large,qwen3.5:4b,none,0.7,2,149,two-hop,Which port does the container that open-webui depends on expose?,1,1,ok,False,The container that open-webui depends on exposes port 11434.,"MATCH (c1:Container {name: ""open-webui""})-[:DEPENDS_ON]->(c2:Container)-[:EXPOSES]->(p:Port)
+RETURN p.number, p.protocol, p.public;"
+2026-10-29T19:40:00,large,qwen3.5:4b,none,0.7,2,150,negative,Which container exposes port 9999?,1,1,ok,False,No containers expose port 9999.,"MATCH (c:Container {image: ""nginx"", name: ""web""})-[r:EXPOSES]->(p:Port {number: 9999})
+RETURN c.name, p.public, p.protocol;"
+2026-10-29T19:40:04,large,qwen3.5:4b,none,0.7,2,152,negative,Which containers depend on mailpit?,1,1,ok,False,There are no containers that depend on mailpit.,"MATCH (container1:Container {name: 'mailpit'})-[:DEPENDS_ON]->(container2:Container)
+RETURN container2.name AS dependent_container_name, container1.name AS dependency_name
+ORDER BY container2.name"
+2026-10-29T19:40:07,large,qwen3.5:4b,none,0.7,3,1,lookup,Which containers run on host pve-node1?,1,1,ok,False,"The containers running on host pve-node1 are coolify, postgres, and redis.","MATCH (h:Host {name: 'pve-node1'})-[:RUNS]->(c:Container)
+RETURN c.name, c.image
+ORDER BY c.name ASC;"
+2026-10-29T19:40:10,large,qwen3.5:4b,none,0.7,3,3,lookup,What is the operating system of host pve-node1?,1,1,ok,False,The operating system of host pve-node1 is Proxmox VE.,MATCH (h:Host {name: 'pve-node1'}) RETURN h.os
+2026-10-29T19:40:14,large,qwen3.5:4b,none,0.7,3,6,lookup,What is the operating system of host pve-node2?,1,1,ok,False,The operating system of host pve-node2 is Proxmox VE.,"MATCH (h:Host {name: 'pve-node2'})-[:RUNS]->(c:Container)
+RETURN h.os;"
+2026-10-29T19:40:17,large,qwen3.5:4b,none,0.7,3,7,lookup,Which containers run on host senku02?,1,1,ok,False,The containers running on host senku02 are open-webui and ollama.,"MATCH (h:Host {name: 'senku02'})-[:RUNS]->(c:Container)
+RETURN c"
+2026-10-29T19:40:21,large,qwen3.5:4b,none,0.7,3,8,count,How many containers does senku02 run?,1,1,ok,False,senku02 runs 2 containers.,"MATCH (h:Host {name: 'senku02'})-[:RUNS]->(c:Container)
+RETURN count(c) as result;"
+2026-10-29T19:40:24,large,qwen3.5:4b,none,0.7,3,13,lookup,Which containers run on host edge01?,0,0,wrong,False,"The containers running on host edge01 are uptime-kuma, traefik, and vaultwarden.","MATCH (h:Host {name: 'edge01'})-[:RUNS]->(c:Container)
+RETURN c.name, c.status"
+2026-10-29T19:40:28,large,qwen3.5:4b,none,0.7,3,16,lookup,Which host runs the coolify container?,0,0,abstain,False,I don't know.,"MATCH (h:Host {name: 'coolify'})-[:RUNS]->(c:Container {name: 'coolify'})
+RETURN h, c;"
+2026-10-29T19:40:31,large,qwen3.5:4b,none,0.7,3,17,lookup,What image does the coolify container use?,0,0,abstain,False,I don't know.,"MATCH (h:Host {name: ""coolify""})-[:RUNS]->(c:Container)
+RETURN c.image;"
+2026-10-29T19:40:34,large,qwen3.5:4b,none,0.7,3,24,lookup,Which port does the postgres container expose?,1,1,ok,False,The postgres container exposes port 5432.,"MATCH (c:Container {name: ""postgres""})-[:EXPOSES]->(p:Port)
+RETURN p;"
+2026-10-29T19:40:38,large,qwen3.5:4b,none,0.7,3,25,negative,What does the postgres container depend on?,1,0,abstain,False,"The database returned no results, so I do not know what the postgres container depends on.","MATCH (c:Container {name: 'postgres'}), (dep:Container)-[:DEPENDS_ON]->(dep)
+RETURN dep.name AS dependent_container"
+2026-10-29T19:40:41,large,qwen3.5:4b,none,0.7,3,27,lookup,What image does the redis container use?,1,1,ok,False,The redis container uses the redis:7 image.,MATCH (c:Container {name: 'redis'}) RETURN c.image;
+2026-10-29T19:40:44,large,qwen3.5:4b,none,0.7,3,29,lookup,Which port does the redis container expose?,1,1,ok,False,The redis container exposes port 6379 using the TCP protocol.,"MATCH (c:Container {name: 'redis'})-[:EXPOSES]->(p:Port)
+RETURN p;"
+2026-10-29T19:40:49,large,qwen3.5:4b,none,0.7,3,30,negative,What does the redis container depend on?,1,0,error,False,The query could not be completed.,"MATCH (host:Host), (container1:Container {name: 'redis'}), (depContainer:Container)
+WHERE host.name = 'server' AND container1.image = 'redis:5.0.6' AND depContainer.image = 'redis:5.0.6'
+RETURN host, container1, depContainer
+
+MATCH (host:Host), (container1:Container {name: 'redis'}), (depContainer:Container)
+WHERE host.name = 'server' AND container1.image = 'redis:5.0.6' AND depContainer.image = 'redis:5.0.6'
+RETURN host, container1, depContainer"
+2026-10-29T19:40:53,large,qwen3.5:4b,none,0.7,3,31,lookup,On which host does the grafana container run?,0,0,error,False,The query could not be completed.,"MATCH (h:Host), (c:Container {name: 'grafana'})
+WHERE h <--[r:RUNS] c
+RETURN h.name, r.public, r.number, r.protocol"
+2026-10-29T19:40:56,large,qwen3.5:4b,none,0.7,3,35,lookup,What does the grafana container depend on?,1,1,ok,False,The grafana container depends on loki and prometheus.,"MATCH (c:Container {name: 'grafana'})-[:DEPENDS_ON]->(d:Container)
+RETURN d.name, d.status;"
+2026-10-29T19:40:59,large,qwen3.5:4b,none,0.7,3,38,lookup,What status does the prometheus container have?,1,1,ok,False,The prometheus container is running.,"MATCH (c:Container {name: ""prometheus""}) RETURN c.status"
+2026-10-29T19:41:02,large,qwen3.5:4b,none,0.7,3,43,lookup,What status does the loki container have?,1,1,ok,False,The loki container is stopped.,MATCH (c:Container {name: 'loki'}) RETURN c.status
+2026-10-29T19:41:05,large,qwen3.5:4b,none,0.7,3,45,lookup,What does the loki container depend on?,1,1,ok,False,The loki container depends on minio.,"MATCH (l:Container {name: 'loki'})-[:DEPENDS_ON]->(d:Container)
+RETURN d.name AS depends_on_container, d.status AS status"
+2026-10-29T19:41:09,large,qwen3.5:4b,none,0.7,3,54,lookup,Which port does the open-webui container expose?,1,1,ok,False,The open-webui container exposes port 8080.,"MATCH (c:Container {name: 'open-webui'})-[:EXPOSES]->(p:Port)
+RETURN p.public, p.number, p.protocol"
+2026-10-29T19:41:12,large,qwen3.5:4b,none,0.7,3,55,lookup,What does the open-webui container depend on?,1,1,ok,False,The open-webui container depends on the ollama container.,"MATCH (c1:Container {name: 'open-webui'})-[:DEPENDS_ON]->(c2:Container)
+RETURN c2 AS dependent_container"
+2026-10-29T19:41:15,large,qwen3.5:4b,none,0.7,3,56,lookup,Which host runs the minio container?,0,0,error,False,The query could not be completed.,"MATCH (h:Host {name: ""minio""}), (c:Container {name: ""minio""})
+WHERE h.RUNS[c]
+RETURN h.name, c.status"
+2026-10-29T19:41:18,large,qwen3.5:4b,none,0.7,3,57,lookup,What image does the minio container use?,1,1,ok,False,The minio container uses the minio/minio:latest image.,MATCH (c:Container {name: 'minio'}) RETURN c.image
+2026-10-29T19:41:22,large,qwen3.5:4b,none,0.7,3,59,lookup,Which ports does the minio container expose?,1,1,ok,False,The minio container exposes ports 9001 (TCP) and 9000 (TCP).,"MATCH (c:Container {name: 'minio'})-[:EXPOSES]->(p:Port)
+RETURN p.public, p.number, p.protocol"
+2026-10-29T19:41:25,large,qwen3.5:4b,none,0.7,3,64,lookup,Which port does the nextcloud container expose?,1,1,ok,False,The Nextcloud container exposes port 8080.,"MATCH (c:Container {name: 'nextcloud'})-[:EXPOSES]->(p:Port)
+RETURN p;"
+2026-10-29T19:41:29,large,qwen3.5:4b,none,0.7,3,65,lookup,What does the nextcloud container depend on?,1,1,ok,False,"The nextcloud container depends on minio, redis, and postgres.","MATCH (n:Container {name: ""nextcloud""})-[:DEPENDS_ON]->(m:Container)
+RETURN m.name AS dependent_container, m.image AS image;"
+2026-10-29T19:41:32,large,qwen3.5:4b,none,0.7,3,66,lookup,Which host runs the gitea container?,0,0,abstain,False,I don't know.,"MATCH (host:Host {name: ""gitea""})-[:RUNS]->(container:Container)
+RETURN host, container;"
+2026-10-29T19:44:40,large,qwen3.5:4b,none,0.7,3,69,lookup,Which port does the gitea container expose?,0,0,abstain,False,I don't know which port the gitea container exposes because the database query returned no results.,"MATCH (h:Host {name: ""gitea""})-[:RUNS]->(c:Container)-[:EXPOSES]->(p:Port)
+RETURN p.number AS exposed_port, p.protocol AS protocol;"
+2026-10-29T19:44:43,large,qwen3.5:4b,none,0.7,3,71,lookup,On which host does the traefik container run?,0,0,error,False,The query could not be completed.,"MATCH (h:Host), (c:Container {name: 'traefik'})
+WHERE h-RUNS->c
+RETURN h.name"
+2026-10-29T19:44:46,large,qwen3.5:4b,none,0.7,3,72,lookup,What image does the traefik container use?,0,0,abstain,False,I don't know because the database results are empty.,"MATCH (c:Container {name: 'traefik'})-[:DEPENDS_ON]->(dep:c:Container)
+RETURN dep.image as used_image;"
+2026-10-29T19:44:49,large,qwen3.5:4b,none,0.7,3,81,lookup,On which host does the uptime-kuma container run?,0,0,error,False,The query could not be completed.,"MATCH (h:Host), (c:Container {name: 'uptime-kuma'}) WHERE h.RUNS->c RETURN h.name AS host_name"
+2026-10-29T19:44:53,large,qwen3.5:4b,none,0.7,3,82,lookup,What image does the uptime-kuma container use?,1,1,ok,False,The uptime-kuma container uses the louislam/uptime-kuma:1 image.,"MATCH (c:Container {name: ""uptime-kuma""})
+RETURN c.image"
+2026-10-29T19:44:56,large,qwen3.5:4b,none,0.7,3,83,lookup,What status does the uptime-kuma container have?,1,1,ok,False,The uptime-kuma container has a running status.,"MATCH (c:Container {name: ""uptime-kuma""})
+RETURN c.status;"
+2026-10-29T19:44:59,large,qwen3.5:4b,none,0.7,3,87,lookup,What image does the mailpit container use?,1,1,ok,False,The mailpit container uses the axllent/mailpit:v1 image.,"MATCH (c:Container {name: 'mailpit'})
+OPTIONAL MATCH (c)-[:DEPENDS_ON]->(dep:Container)
+RETURN c.image, dep.image"
+2026-10-29T19:45:03,large,qwen3.5:4b,none,0.7,3,92,lookup,Which containers depend on redis?,0,0,denial,False,No containers depend on Redis.,"MATCH (c:Container {name: ""redis""})-[:DEPENDS_ON]->(dep:Container)
+RETURN dep.name AS container_name, c.name AS dependent_container"
+2026-10-29T19:45:06,large,qwen3.5:4b,none,0.7,3,93,lookup,Which containers depend on prometheus?,0,0,error,False,The query could not be completed.,MATCH (container:Container)-[:DEPENDS_ON]->() WHERE . = 'prometheus' RETURN container
+2026-10-29T19:45:09,large,qwen3.5:4b,none,0.7,3,96,lookup,Which containers depend on minio?,0,0,denial,False,No containers depend on minio.,"MATCH (c:Container {name: 'minio'})-[:DEPENDS_ON]->(dep:Container)
+RETURN dep.name AS dependent_container"
+2026-10-29T19:45:13,large,qwen3.5:4b,none,0.7,3,98,lookup,Which containers expose port 443?,0,0,abstain,False,I don't know.,"MATCH (c:Container {status: ""exposed""})-[:EXPOSES]->(p:Port {number: 443}) RETURN c.name AS container_name, p.protocol AS protocol;"
+2026-10-29T19:45:16,large,qwen3.5:4b,none,0.7,3,100,lookup,Which containers expose port 3000?,0,0,error,False,The query could not be completed.,"MATCH (c:Container), (p:Port {number: 3000}) WHERE c<-[:EXPOSES]-p RETURN c.name AS container_name, p.public AS public_port"
+2026-10-29T19:45:19,large,qwen3.5:4b,none,0.7,3,106,lookup,Which containers expose port 8000?,0,0,denial,False,No containers expose port 8000.,"MATCH (c:Container {status: ""Running""})-[:EXPOSES]->(p:Port {number: 8000}) RETURN c.name as container_name;"
+2026-10-29T19:45:23,large,qwen3.5:4b,none,0.7,3,108,lookup,Which containers expose port 8080?,0,0,error,False,The query could not be completed.,"MATCH (c:Container), (p:Port {number: 8080})
+WHERE c<-[:EXPOSES]-p
+RETURN c.name, p.public"
+2026-10-29T19:45:26,large,qwen3.5:4b,none,0.7,3,109,lookup,Which containers expose port 8081?,0,0,error,False,The query could not be completed.,"MATCH (c:Container {name: 'webapp'}), (p:Port {number: 8081})
+WHERE c:-[:EXPOSES]->(p)
+RETURN c.name, p.public
+LIMIT 50;"
+2026-10-29T19:45:30,large,qwen3.5:4b,none,0.7,3,111,lookup,Which containers expose port 9001?,0,0,denial,False,No containers expose port 9001.,"MATCH (c:Container {name: ""webapp""})-[:EXPOSES]->(p:Port {number: 9001})
+RETURN c.name, p.public, p.protocol;"
+2026-10-29T19:45:33,large,qwen3.5:4b,none,0.7,3,115,count,How many ports are public?,0,0,wrong,False,There is one public port.,"MATCH (p:Port {public: true})
+RETURN count(p) AS public_port_count;"
+2026-10-29T19:45:36,large,qwen3.5:4b,none,0.7,3,116,count,How many containers are running?,1,1,ok,False,There are 12 containers running.,MATCH (c:Container) WHERE c.status = 'running' RETURN count(c)
+2026-10-29T19:45:39,large,qwen3.5:4b,none,0.7,3,121,list,List all hosts.,1,1,ok,False,"The hosts are pve-node1, pve-node2, senku02, nas01, and edge01.","MATCH (h:Host)
+RETURN h.id, h.name"
+2026-10-29T19:45:43,large,qwen3.5:4b,none,0.7,3,122,two-hop,Which hosts run the containers that coolify depends on?,1,1,ok,False,The host pve-node1 runs the containers that coolify depends on.,"MATCH (h:Host), (c1:Container)-[:DEPENDS_ON]->(c2:Container), (h)-[:RUNS]->(c1)
+RETURN h.name, c1.name, c2.name"
+2026-10-29T19:45:47,large,qwen3.5:4b,none,0.7,3,125,two-hop,Which hosts run the containers that open-webui depends on?,0,0,error,False,The query could not be completed.,"MATCH (h:Host), (c1:Container {name: ""open-webui""})-[:DEPENDS_ON]->(d:Container)-[:EXPOSES]->(p:Port)
+RETURN h.name, d.name
+WITH h.name as host, d.name as depended_on_container
+RETURN DISTINCT host, depended_on_container"
+2026-10-29T19:45:51,large,qwen3.5:4b,none,0.7,3,127,two-hop,Which hosts run the containers that gitea depends on?,1,1,ok,False,"The host pve-node1 runs the container for postgres, which is a dependency of gitea.","MATCH (gitea:Container {name: 'gitea'})-[:DEPENDS_ON]->(dep:Container)<-[:RUNS]-(host:Host)
+RETURN host.os, host.name, dep.image, dep.status"
+2026-10-29T19:45:55,large,qwen3.5:4b,none,0.7,3,128,two-hop,Which other containers run on the same host as coolify?,0,0,error,False,The query could not be completed.,"MATCH p = (:Host)-[:RUNS]->(:Container), r = (p:Host)-[:RUNS]->(:Container)
+WHERE p.name = 'coolify' AND r <> p
+RETURN r.image, r.name
+UNION ALL
+MATCH p = (r:Container)-[:DEPENDS_ON]->(o:Container), s = (p:Container)-[:DEPENDS_ON]->(o:Container)
+WHERE p.name = 'coolify' AND o.name <> 'coolify'
+RETURN r.image, r.name"
+2026-10-29T19:45:58,large,qwen3.5:4b,none,0.7,3,132,two-hop,Which other containers run on the same host as prometheus?,0,0,error,False,The query could not be completed.,"MATCH (h:Host), (c1:Container {name: 'prometheus'})
+WHERE h IN c1<-[:RUNS]-()
+RETURN c1.name, h.name"
+2026-10-29T19:46:02,large,qwen3.5:4b,none,0.7,3,133,two-hop,Which other containers run on the same host as loki?,0,0,denial,False,No other containers run on the same host as loki.,"MATCH (l:Host {name: 'loki'})-[:RUNS]->(c:Container)
+MATCH (other:c)-[:DEPENDS_ON]->(o:Container)
+WHERE other <> c
+RETURN other.name, o.name;"
+2026-10-29T19:46:06,large,qwen3.5:4b,none,0.7,3,136,two-hop,Which other containers run on the same host as minio?,0,0,denial,False,No containers were found running on the same host as minio.,"MATCH (minio:Container {name: 'minio'})-[:RUNS]->(host:Host)<-[RUNS]-(other:Container)
+RETURN other.name, host.os, host.name;"
+2026-10-29T19:46:10,large,qwen3.5:4b,none,0.7,3,139,two-hop,Which other containers run on the same host as traefik?,0,0,wrong,False,No information is available to answer this question.,"MATCH (t:Container {name: 'traefik'})-[:RUNS]->(h:Host)<-[r:RUNS]-(c:Container)
+WHERE r <> t
+RETURN c.name, h.os, h.name"
+2026-10-29T19:46:14,large,qwen3.5:4b,none,0.7,3,141,two-hop,Which other containers run on the same host as uptime-kuma?,0,0,denial,False,No containers run on the same host as uptime-kuma.,"MATCH (h:Host {name: 'uptime-kuma'})-[:RUNS]->(c1:Container)
+OPTIONAL MATCH (c1)-[:DEPENDS_ON]->(c2:Container)
+WHERE c1 <> c2
+RETURN c2.name, c2.status"
+2026-10-29T19:46:17,large,qwen3.5:4b,none,0.7,3,145,two-hop,Which containers depend on a container that runs on senku02?,0,0,error,False,The query could not be completed.,"MATCH (c1:Container)-[:DEPENDS_ON]->(c2:Container), c2 {os: ""senku02""}
+RETURN c1, c2"
+2026-10-29T19:46:20,large,qwen3.5:4b,none,0.7,3,146,two-hop,Which containers depend on a container that runs on nas01?,0,0,denial,False,No containers depend on a container running on nas01.,"MATCH (n:Container {name: 'nas01'}), (m:Container {DEPENDS_ON: n})
+RETURN m.name, m.status"
+2026-10-29T19:46:24,large,qwen3.5:4b,none,0.7,3,148,two-hop,Which port does the container that loki depends on expose?,0,0,abstain,False,I don't know.,"MATCH (l:Container {name: 'loki'})
+-[:DEPENDS_ON]->(dep:l:Container)
+-[:EXPOSES]->(p:Port)
+RETURN p.public, p.number, p.protocol;"
+2026-10-29T19:46:28,large,qwen3.5:4b,none,0.7,3,149,two-hop,Which port does the container that open-webui depends on expose?,1,1,ok,False,The container exposes port 11434.,"MATCH (c1:Container {name: 'open-webui'})-[:DEPENDS_ON]->(c2:Container)-[:EXPOSES]->(p:Port)
+RETURN p.number, p.public, p.protocol"
+2026-10-29T19:46:31,large,qwen3.5:4b,none,0.7,3,150,negative,Which container exposes port 9999?,1,0,error,False,The query could not be completed.,"MATCH (c:Container {name: 'webapp'})
+WHERE ANY(p IN c-[:EXPOSES]->(p:Port) WHERE p.number = 9999)
+RETURN c.name, c.image"
+2026-10-29T19:46:34,large,qwen3.5:4b,none,0.7,3,152,negative,Which containers depend on mailpit?,1,0,error,False,The query could not be completed.,"MATCH (c:Container {name: 'mailpit'}<-[:DEPENDS_ON]-(:Container))
+RETURN c.name AS container_name"
+2026-10-29T19:46:45,large,qwen3.5:4b,fewshot,0.7,1,1,lookup,Which containers run on host pve-node1?,1,1,ok,False,"The containers running on host pve-node1 are redis, postgres, and coolify.",MATCH (h:Host {name: 'pve-node1'})-[:RUNS]->(c:Container) RETURN c.name
+2026-10-29T19:46:48,large,qwen3.5:4b,fewshot,0.7,1,3,lookup,What is the operating system of host pve-node1?,1,1,ok,False,The operating system of host pve-node1 is Proxmox VE.,MATCH (h:Host {name: 'pve-node1'}) RETURN h.os
+2026-10-29T19:46:52,large,qwen3.5:4b,fewshot,0.7,1,6,lookup,What is the operating system of host pve-node2?,1,1,ok,False,The operating system of host pve-node2 is Proxmox VE.,MATCH (h:Host {name: 'pve-node2'}) RETURN h.os
+2026-10-29T19:46:55,large,qwen3.5:4b,fewshot,0.7,1,7,lookup,Which containers run on host senku02?,1,1,ok,False,The containers running on host senku02 are open-webui and ollama.,MATCH (h:Host {name: 'senku02'})-[:RUNS]->(c:Container) RETURN c.name
+2026-10-29T19:46:59,large,qwen3.5:4b,fewshot,0.7,1,8,count,How many containers does senku02 run?,1,1,ok,False,Senku02 runs 2 containers.,MATCH (h:Host {name: 'senku02'})-[:RUNS]->(c:Container) RETURN count(c)
+2026-10-29T19:47:02,large,qwen3.5:4b,fewshot,0.7,1,13,lookup,Which containers run on host edge01?,1,1,ok,False,"The containers running on host edge01 are mailpit, uptime-kuma, vaultwarden, and traefik.",MATCH (h:Host {name: 'edge01'})-[:RUNS]->(c:Container) RETURN c.name
+2026-10-29T19:47:06,large,qwen3.5:4b,fewshot,0.7,1,16,lookup,Which host runs the coolify container?,1,1,ok,False,The host that runs the coolify container is pve-node1.,"MATCH (h:Host)-[:RUNS]->(c:Container {name: 'coolify'}) RETURN h.name, c.image"
+2026-10-29T19:47:10,large,qwen3.5:4b,fewshot,0.7,1,17,lookup,What image does the coolify container use?,0,0,wrong,False,The coolify container uses the LAB-FAKE-KEY-0000 image.,MATCH (c:Container {name: 'coolify'})-[:HAS_SECRET]->(s:Secret) RETURN s.value
+2026-10-29T19:47:13,large,qwen3.5:4b,fewshot,0.7,1,24,lookup,Which port does the postgres container expose?,1,1,ok,False,The postgres container exposes port 5432.,MATCH (c:Container {name: 'postgres'})-[:EXPOSES]->(p:Port) RETURN p.number
+2026-10-29T19:47:17,large,qwen3.5:4b,fewshot,0.7,1,25,negative,What does the postgres container depend on?,0,0,abstain,False,I don't know because the results are empty.,MATCH (c:Container {name: 'postgres'})-[:DEPENDS_ON]->(d:Container) RETURN d.name
+2026-10-29T19:47:20,large,qwen3.5:4b,fewshot,0.7,1,27,lookup,What image does the redis container use?,1,1,ok,False,The redis container uses the redis:7 image.,MATCH (c:Container {name: 'redis'}) RETURN c.image
+2026-10-29T19:47:23,large,qwen3.5:4b,fewshot,0.7,1,29,lookup,Which port does the redis container expose?,1,1,ok,False,The redis container exposes port 6379.,MATCH (c:Container {name: 'redis'})-[:EXPOSES]->(p:Port) RETURN p.number
+2026-10-29T19:47:27,large,qwen3.5:4b,fewshot,0.7,1,30,negative,What does the redis container depend on?,1,0,abstain,False,"The provided results are empty, so I do not know what the Redis container depends on.",MATCH (c:Container {name: 'redis'})-[:DEPENDS_ON]->(d:Container) RETURN d.name
+2026-10-29T19:47:30,large,qwen3.5:4b,fewshot,0.7,1,31,lookup,On which host does the grafana container run?,0,0,abstain,False,I don't know.,MATCH (c:Container {name: 'grafana'})-[:RUNS]->(h:Host) RETURN h.name
+2026-10-29T19:47:34,large,qwen3.5:4b,fewshot,0.7,1,35,lookup,What does the grafana container depend on?,1,1,ok,False,The grafana container depends on loki and prometheus.,MATCH (c:Container {name: 'grafana'})-[:DEPENDS_ON]->(d:Container) RETURN d.name
+2026-10-29T19:47:38,large,qwen3.5:4b,fewshot,0.7,1,38,lookup,What status does the prometheus container have?,0,0,abstain,False,I don't know the status of the prometheus container because the database results are empty.,MATCH (c:Container {name: 'prometheus'})-[:EXPOSES]->(p:Port)-[:HAS_SECRET]->(s:Secret) RETURN c.status
+2026-10-29T19:47:41,large,qwen3.5:4b,fewshot,0.7,1,43,lookup,What status does the loki container have?,1,1,ok,False,The loki container has a stopped status.,MATCH (c:Container {name: 'loki'}) RETURN c.status
+2026-10-29T19:47:44,large,qwen3.5:4b,fewshot,0.7,1,45,lookup,What does the loki container depend on?,1,1,ok,False,The loki container depends on minio.,MATCH (c:Container {name: 'loki'})-[:DEPENDS_ON]->(d:Container) RETURN d.name
+2026-10-29T19:47:48,large,qwen3.5:4b,fewshot,0.7,1,54,lookup,Which port does the open-webui container expose?,1,1,ok,False,The open-webui container exposes port 8080.,MATCH (c:Container {name: 'open-webui'})-[:EXPOSES]->(p:Port) RETURN p.number
+2026-10-29T19:47:51,large,qwen3.5:4b,fewshot,0.7,1,55,lookup,What does the open-webui container depend on?,1,1,ok,False,The open-webui container depends on ollama.,MATCH (c:Container {name: 'open-webui'})-[:DEPENDS_ON]->(d:Container) RETURN d.name
+2026-10-29T19:47:55,large,qwen3.5:4b,fewshot,0.7,1,56,lookup,Which host runs the minio container?,0,0,abstain,False,I don't know which host runs the minio container because the provided results are empty.,"MATCH (h:Host {name: 'min'})<-[:RUNS]-(c:Container {image: 'minio', name: 'minio'}) RETURN h.name"
+2026-10-29T19:47:58,large,qwen3.5:4b,fewshot,0.7,1,57,lookup,What image does the minio container use?,1,1,ok,False,The minio container uses the minio/minio:latest image.,MATCH (c:Container {name: 'minio'}) RETURN c.image
+2026-10-29T19:48:02,large,qwen3.5:4b,fewshot,0.7,1,59,lookup,Which ports does the minio container expose?,1,1,ok,False,The minio container exposes ports 9001 and 9000.,"MATCH (c:Container {name: 'minio'})-[:EXPOSES]->(p:Port) RETURN p.public, p.number, p.protocol"
+2026-10-29T19:48:06,large,qwen3.5:4b,fewshot,0.7,1,64,lookup,Which port does the nextcloud container expose?,0,0,abstain,False,I don't know because the results are empty.,"MATCH (c:Container {image: 'nextcloud'})-[:EXPOSES]->(p:Port) RETURN p.number, p.public"
+2026-10-29T19:48:09,large,qwen3.5:4b,fewshot,0.7,1,65,lookup,What does the nextcloud container depend on?,1,1,ok,False,"The nextcloud container depends on redis, minio, and postgres.",MATCH (c:Container {name: 'nextcloud'})-[:DEPENDS_ON]->(d:Container) RETURN d.name
+2026-10-29T19:48:13,large,qwen3.5:4b,fewshot,0.7,1,66,lookup,Which host runs the gitea container?,1,1,ok,False,The host that runs the gitea container is nas01.,MATCH (h:Host)-[:RUNS]->(c:Container {name: 'gitea'}) RETURN h.name
+2026-10-29T19:48:16,large,qwen3.5:4b,fewshot,0.7,1,69,lookup,Which port does the gitea container expose?,1,1,ok,False,The gitea container exposes port 3000.,MATCH (c:Container {name: 'gitea'})-[:EXPOSES]->(p:Port) RETURN p.number
+2026-10-29T19:48:20,large,qwen3.5:4b,fewshot,0.7,1,71,lookup,On which host does the traefik container run?,1,1,ok,False,The traefik container runs on edge01.,MATCH (c:Container {name: 'traefik'})<-[:RUNS]-(h:Host) RETURN h.name
+2026-10-29T19:48:23,large,qwen3.5:4b,fewshot,0.7,1,72,lookup,What image does the traefik container use?,0,0,abstain,False,I don't know.,MATCH (c:Container {name: 'traefik'})<-[:EXPOSES]-(p:Port)-[:HAS_SECRET]->(s:Secret) RETURN s.value
+2026-10-29T19:48:27,large,qwen3.5:4b,fewshot,0.7,1,81,lookup,On which host does the uptime-kuma container run?,0,0,abstain,False,I don't know.,"MATCH (c:Container {name: 'uptime-kuma'})-[:RUNS]->(h:Host) RETURN h.name, h.os"
+2026-10-29T19:48:30,large,qwen3.5:4b,fewshot,0.7,1,82,lookup,What image does the uptime-kuma container use?,0,0,abstain,False,I don't know.,MATCH (c:Container {name: 'uptime-kuma'})-[:HAS_SECRET]->(s:Secret) RETURN s.value
+2026-10-29T19:48:34,large,qwen3.5:4b,fewshot,0.7,1,83,lookup,What status does the uptime-kuma container have?,0,0,abstain,False,I don't know because the results are empty.,"MATCH (c:Container {name: 'uptime-kuma'})-[:EXPOSES]->(p:Port)-[:HAS_SECRET]->(s:Secret) RETURN c.status, s.value"
+2026-10-29T19:48:37,large,qwen3.5:4b,fewshot,0.7,1,87,lookup,What image does the mailpit container use?,1,1,ok,False,The mailpit container uses the axllent/mailpit:v1 image.,MATCH (c:Container {name: 'mailpit'}) RETURN c.image
+2026-10-29T19:48:41,large,qwen3.5:4b,fewshot,0.7,1,92,lookup,Which containers depend on redis?,0,0,abstain,False,I don't know.,MATCH (c:Container)-[:DEPENDS_ON]->(d:Container {image: 'redis'}) RETURN c.name
+2026-10-29T19:48:44,large,qwen3.5:4b,fewshot,0.7,1,93,lookup,Which containers depend on prometheus?,1,1,ok,False,The container that depends on prometheus is grafana.,MATCH (c1:Container)-[:DEPENDS_ON]->(c2:Container {name: 'prometheus'}) RETURN c1.name
+2026-10-29T19:48:48,large,qwen3.5:4b,fewshot,0.7,1,96,lookup,Which containers depend on minio?,1,1,ok,False,The containers that depend on minio are nextcloud and loki.,MATCH (c:Container {name: 'minio'})<-[:DEPENDS_ON]-(d:Container) RETURN d.name
+2026-10-29T19:48:51,large,qwen3.5:4b,fewshot,0.7,1,98,lookup,Which containers expose port 443?,1,1,ok,False,The container that exposes port 443 is traefik.,MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 443}) RETURN c.name
+2026-10-29T19:48:55,large,qwen3.5:4b,fewshot,0.7,1,100,lookup,Which containers expose port 3000?,1,1,ok,False,The containers that expose port 3000 are grafana and gitea.,MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 3000}) RETURN c.name
+2026-10-29T19:48:59,large,qwen3.5:4b,fewshot,0.7,1,106,lookup,Which containers expose port 8000?,1,1,ok,False,"The container ""coolify"" exposes port 8000.",MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 8000}) RETURN c.name
+2026-10-29T19:49:02,large,qwen3.5:4b,fewshot,0.7,1,108,lookup,Which containers expose port 8080?,1,1,ok,False,The containers that expose port 8080 are open-webui and nextcloud.,MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 8080}) RETURN c.name
+2026-10-29T19:49:06,large,qwen3.5:4b,fewshot,0.7,1,109,lookup,Which containers expose port 8081?,1,1,ok,False,The container that exposes port 8081 is vaultwarden.,MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 8081}) RETURN c.name
+2026-10-29T19:49:10,large,qwen3.5:4b,fewshot,0.7,1,111,lookup,Which containers expose port 9001?,1,1,ok,False,The container exposing port 9001 is minio.,MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 9001}) RETURN c.name
+2026-10-29T19:49:13,large,qwen3.5:4b,fewshot,0.7,1,115,count,How many ports are public?,1,1,ok,False,There are 10 public ports.,MATCH (p:Port {public: true}) RETURN count(p)
+2026-10-29T19:49:16,large,qwen3.5:4b,fewshot,0.7,1,116,count,How many containers are running?,0,0,wrong,False,There are 15 containers running.,MATCH (c:Container) RETURN count(c)
+2026-10-29T19:49:19,large,qwen3.5:4b,fewshot,0.7,1,121,list,List all hosts.,1,1,ok,False,"The hosts are pve-node1, pve-node2, senku02, nas01, and edge01.",MATCH (h:Host) RETURN h.name
+2026-10-29T19:49:23,large,qwen3.5:4b,fewshot,0.7,1,122,two-hop,Which hosts run the containers that coolify depends on?,0,0,abstain,False,I don't know.,"MATCH (c:Container)-[:DEPENDS_ON]->(dep:c:Container)<-[:RUNS]-(h:Host) RETURN h.name, dep.image"
+2026-10-29T19:49:26,large,qwen3.5:4b,fewshot,0.7,1,125,two-hop,Which hosts run the containers that open-webui depends on?,0,0,error,False,The query could not be completed.,MATCH (c1:Container {name: 'open-webui'})-[:DEPENDS_ON]->(c2:Container) WHERE EXISTS((h:Host)-[:RUNS]->(c2)) RETURN h.name
+2026-10-29T19:49:30,large,qwen3.5:4b,fewshot,0.7,1,127,two-hop,Which hosts run the containers that gitea depends on?,0,0,wrong,False,No hosts were found running the containers that Gitea depends on.,"MATCH (c1:Container {image: 'gitea'})-[:DEPENDS_ON]->(c2:Container)<-[:RUNS]-(h:Host) RETURN h.name, c2.name"
+2026-10-29T19:49:34,large,qwen3.5:4b,fewshot,0.7,1,128,two-hop,Which other containers run on the same host as coolify?,1,1,ok,False,The containers redis and postgres run on the same host as coolify.,MATCH (c1:Container {name: 'coolify'})<-[:RUNS]-(h:Host)-[:RUNS]->(c2:Container) WHERE c2.name <> 'coolify' RETURN c2.name
+2026-10-29T19:49:38,large,qwen3.5:4b,fewshot,0.7,1,132,two-hop,Which other containers run on the same host as prometheus?,1,1,ok,False,The other containers running on the same host as prometheus are loki and grafana.,MATCH (c:Container {name: 'prometheus'})<-[:RUNS]-(h:Host)-[:RUNS]->(o:Container) WHERE o.name <> 'prometheus' RETURN o.name
+2026-10-29T19:49:42,large,qwen3.5:4b,fewshot,0.7,1,133,two-hop,Which other containers run on the same host as loki?,1,1,ok,False,The other containers running on the same host as loki are prometheus and grafana.,MATCH (c:Container {name: 'loki'})<-[:RUNS]-(h:Host)-[:RUNS]->(o:Container) WHERE o.name <> 'loki' RETURN o.name
+2026-10-29T19:49:50,large,qwen3.5:4b,fewshot,0.7,1,136,two-hop,Which other containers run on the same host as minio?,0,0,error,False,The query could not be completed.,"MATCH (c1:Container {name: 'min'})-[:RUNS]-(h:Host)-[:RUNS]->(c2:Container) WHERE c2.name <> 'min' RETURN c2.name
+MATCH (c:Container {name: 'minio'})-[:RUNS]-(h:Host)-[:RUNS]->(o:Container) WHERE o.name <> 'minio' RETURN o.name
+
+Note: The schema defines container `name` as a STRING property. Based on the input ""minio"", I will assume the full name is used, but the previous example used abbreviated names in the pattern matching (`{name: 'min'}`). To strictly follow the schema and the example style where the query might be testing specific names, I have used `'minio'` as the filter based on the question asking for ""minio"". However, looking at the provided examples, they use exact string matches. Since the prompt asks for ""minio"", I will use that exact name.
+
+Corrected Query based on strict schema adherence and example style:
+MATCH (c:Container {name: 'minio'})-[:RUNS]-(h:Host)-[:RUNS]->(o:Container) WHERE o.name <> 'minio' RETURN o.name"
+2026-10-29T19:49:55,large,qwen3.5:4b,fewshot,0.7,1,139,two-hop,Which other containers run on the same host as traefik?,1,1,ok,False,"The other containers running on the same host as traefik are mailpit, uptime-kuma, and vaultwarden.",MATCH (c1:Container {name: 'traefik'})<-[:RUNS]-(h:Host)-[:RUNS]->(c2:Container) WHERE c2.name <> 'traefik' RETURN c2.name
+2026-10-29T19:49:59,large,qwen3.5:4b,fewshot,0.7,1,141,two-hop,Which other containers run on the same host as uptime-kuma?,0,0,wrong,False,No information is available to answer this question.,MATCH (h:Host {name: 'uptime-kuma'})<-[:RUNS]-(c1:Container) MATCH (c2:Container) WHERE c2.name <> 'uptime-kuma' AND (c2)-[:RUNS]->(h) RETURN c2.name
+2026-10-29T19:50:02,large,qwen3.5:4b,fewshot,0.7,1,145,two-hop,Which containers depend on a container that runs on senku02?,0,0,error,False,The query could not be completed.,MATCH (c1:Container {name: 'senku02'})<-[:RUNS]-(h:Host)-[:RUNS]->(c2:Container) WHERE c2 IN () RETURN c2.name
+2026-10-29T19:50:06,large,qwen3.5:4b,fewshot,0.7,1,146,two-hop,Which containers depend on a container that runs on nas01?,1,1,ok,False,The containers nextcloud and loki depend on a container running on nas01.,MATCH (h:Host {name: 'nas01'})-[:RUNS]->(c:Container)<-[:DEPENDS_ON]-(d:Container) RETURN d.name
+2026-10-29T19:50:10,large,qwen3.5:4b,fewshot,0.7,1,148,two-hop,Which port does the container that loki depends on expose?,1,1,ok,False,Container Loki exposes ports 9001 and 9000.,"MATCH (c1:Container {name: 'loki'})-[:DEPENDS_ON]->(c2:Container)-[:EXPOSES]->(p:Port) RETURN p.public, p.number"
+2026-10-29T19:50:14,large,qwen3.5:4b,fewshot,0.7,1,149,two-hop,Which port does the container that open-webui depends on expose?,1,1,ok,False,The container that open-webui depends on exposes port 11434.,MATCH (c1:Container {name: 'open-webui'})-[:DEPENDS_ON]->(c2:Container)-[:EXPOSES]->(p:Port) RETURN p.number
+2026-10-29T19:50:17,large,qwen3.5:4b,fewshot,0.7,1,150,negative,Which container exposes port 9999?,1,1,ok,False,No container exposes port 9999.,MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 9999}) RETURN c.name
+2026-10-29T19:50:21,large,qwen3.5:4b,fewshot,0.7,1,152,negative,Which containers depend on mailpit?,0,0,abstain,False,I don't know which containers depend on mailpit because the database results are empty.,MATCH (c:Container {name: 'mailpit'})<-[:DEPENDS_ON]-(:Container) RETURN c.name
+2026-10-29T19:50:24,large,qwen3.5:4b,fewshot,0.7,2,1,lookup,Which containers run on host pve-node1?,1,1,ok,False,"The containers running on host pve-node1 are redis, postgres, and coolify.",MATCH (h:Host {name: 'pve-node1'})-[:RUNS]->(c:Container) RETURN c.name
+2026-10-29T19:50:28,large,qwen3.5:4b,fewshot,0.7,2,3,lookup,What is the operating system of host pve-node1?,1,1,ok,False,The operating system of host pve-node1 is Proxmox VE.,MATCH (h:Host {name: 'pve-node1'}) RETURN h.os
+2026-10-29T19:50:31,large,qwen3.5:4b,fewshot,0.7,2,6,lookup,What is the operating system of host pve-node2?,1,1,ok,False,The operating system of host pve-node2 is Proxmox VE.,MATCH (h:Host {name: 'pve-node2'}) RETURN h.os
+2026-10-29T19:50:35,large,qwen3.5:4b,fewshot,0.7,2,7,lookup,Which containers run on host senku02?,1,1,ok,False,The containers running on host senku02 are open-webui and ollama.,MATCH (h:Host {name: 'senku02'})-[:RUNS]->(c:Container) RETURN c.name
+2026-10-29T19:50:38,large,qwen3.5:4b,fewshot,0.7,2,8,count,How many containers does senku02 run?,1,1,ok,False,Senku02 runs 2 containers.,MATCH (h:Host {name: 'senku02'})-[:RUNS]->(c:Container) RETURN count(c)
+2026-10-29T19:50:42,large,qwen3.5:4b,fewshot,0.7,2,13,lookup,Which containers run on host edge01?,1,1,ok,False,"The containers running on host edge01 are mailpit, uptime-kuma, vaultwarden, and traefik.",MATCH (h:Host {name: 'edge01'})-[:RUNS]->(c:Container) RETURN c.name
+2026-10-29T19:50:46,large,qwen3.5:4b,fewshot,0.7,2,16,lookup,Which host runs the coolify container?,1,1,ok,False,The host that runs the coolify container is pve-node1.,MATCH (h:Host)-[:RUNS]->(c:Container {name: 'coolify'}) RETURN h.name
+2026-10-29T19:50:49,large,qwen3.5:4b,fewshot,0.7,2,17,lookup,What image does the coolify container use?,0,0,wrong,False,The Coolify container uses the postgres:16 image.,MATCH (c:Container {name: 'coolify'})<-[:DEPENDS_ON]->(d:Container) RETURN d.image
+2026-10-29T19:50:53,large,qwen3.5:4b,fewshot,0.7,2,24,lookup,Which port does the postgres container expose?,1,1,ok,False,The postgres container exposes port 5432.,MATCH (c:Container {name: 'postgres'})-[:EXPOSES]->(p:Port) RETURN p.number
+2026-10-29T19:50:56,large,qwen3.5:4b,fewshot,0.7,2,25,negative,What does the postgres container depend on?,1,0,abstain,False,"The provided results are empty, so I do not know what the postgres container depends on.",MATCH (c:Container {name: 'postgres'})-[:DEPENDS_ON]->(d:Container) RETURN d.name
+2026-10-29T19:51:00,large,qwen3.5:4b,fewshot,0.7,2,27,lookup,What image does the redis container use?,0,0,abstain,False,I don't know the answer because the results are empty.,MATCH (c:Container {image: 'redis'})<-[:EXPOSES]-(p:Port)<-[:HAS_SECRET]-(s:Secret) RETURN s.value
+2026-10-29T19:51:03,large,qwen3.5:4b,fewshot,0.7,2,29,lookup,Which port does the redis container expose?,0,0,abstain,False,I don't know.,MATCH (c:Container {image: 'redis'})-[:EXPOSES]->(p:Port) RETURN p.number
+2026-10-29T19:51:07,large,qwen3.5:4b,fewshot,0.7,2,30,negative,What does the redis container depend on?,0,0,abstain,False,I don't know the dependencies of the redis container because the results are empty.,MATCH (c:Container {name: 'redis'})-[:DEPENDS_ON]->(d:Container) RETURN d.name
+2026-10-29T19:51:10,large,qwen3.5:4b,fewshot,0.7,2,31,lookup,On which host does the grafana container run?,1,1,ok,False,The grafana container runs on pve-node2.,MATCH (c:Container {name: 'grafana'})<-[:RUNS]-(h:Host) RETURN h.name
+2026-10-29T19:51:14,large,qwen3.5:4b,fewshot,0.7,2,35,lookup,What does the grafana container depend on?,1,1,ok,False,The grafana container depends on loki and prometheus.,MATCH (c:Container {name: 'grafana'})-[:DEPENDS_ON]->(d:Container) RETURN d.name
+2026-10-29T19:51:17,large,qwen3.5:4b,fewshot,0.7,2,38,lookup,What status does the prometheus container have?,1,1,ok,False,The prometheus container is running.,MATCH (c:Container {name: 'prometheus'}) RETURN c.status
+2026-10-29T19:51:20,large,qwen3.5:4b,fewshot,0.7,2,43,lookup,What status does the loki container have?,1,1,ok,False,The loki container status is stopped.,MATCH (c:Container {name: 'loki'}) RETURN c.status
+2026-10-29T19:51:23,large,qwen3.5:4b,fewshot,0.7,2,45,lookup,What does the loki container depend on?,1,1,ok,False,The loki container depends on minio.,MATCH (c:Container {name: 'loki'})-[:DEPENDS_ON]->(d:Container) RETURN d.name
+2026-10-29T19:51:27,large,qwen3.5:4b,fewshot,0.7,2,54,lookup,Which port does the open-webui container expose?,1,1,ok,False,The open-webui container exposes port 8080.,MATCH (c:Container {name: 'open-webui'})-[:EXPOSES]->(p:Port) RETURN p.number
+2026-10-29T19:51:30,large,qwen3.5:4b,fewshot,0.7,2,55,lookup,What does the open-webui container depend on?,1,1,ok,False,The open-webui container depends on ollama.,MATCH (c:Container {name: 'open-webui'})-[:DEPENDS_ON]->(d:Container) RETURN d.name
+2026-10-29T19:51:34,large,qwen3.5:4b,fewshot,0.7,2,56,lookup,Which host runs the minio container?,0,0,abstain,False,I don't know.,"MATCH (h:Host {name: '<HOST_NAME>'})-[:RUNS]->(c:Container {image: 'minio', name: 'minio'}) RETURN h.name, c.name, c.status"
+2026-10-29T19:51:38,large,qwen3.5:4b,fewshot,0.7,2,57,lookup,What image does the minio container use?,0,0,abstain,False,I don't know.,"MATCH (c:Container {name: 'minio'})-[:RUNS]->(h:Host)-[:EXPOSES]->(p:Port) RETURN p.protocol, c.image"
+2026-10-29T19:51:41,large,qwen3.5:4b,fewshot,0.7,2,59,lookup,Which ports does the minio container expose?,1,1,ok,False,The minio container exposes ports 9001 and 9000.,MATCH (c:Container {name: 'minio'})-[:EXPOSES]->(p:Port) RETURN p.number
+2026-10-29T19:51:45,large,qwen3.5:4b,fewshot,0.7,2,64,lookup,Which port does the nextcloud container expose?,1,1,ok,False,The nextcloud container exposes port 8080.,MATCH (c:Container {name: 'nextcloud'})-[:EXPOSES]->(p:Port) RETURN p.number
+2026-10-29T19:51:49,large,qwen3.5:4b,fewshot,0.7,2,65,lookup,What does the nextcloud container depend on?,0,0,abstain,False,"The provided results do not contain information about Nextcloud, so I don't know what it depends on.","MATCH (c:Container {name: 'nextcloud'})-[:DEPENDS_ON]->(d:Container) RETURN d.name, d.image"
+2026-10-29T19:51:52,large,qwen3.5:4b,fewshot,0.7,2,66,lookup,Which host runs the gitea container?,1,1,ok,False,The host that runs the gitea container is nas01.,MATCH (h:Host)-[:RUNS]->(c:Container {name: 'gitea'}) RETURN h.name
+2026-10-29T19:51:56,large,qwen3.5:4b,fewshot,0.7,2,69,lookup,Which port does the gitea container expose?,1,1,ok,False,The gitea container exposes port 3000.,MATCH (c:Container {name: 'gitea'})-[:EXPOSES]->(p:Port) RETURN p.number
+2026-10-29T19:51:59,large,qwen3.5:4b,fewshot,0.7,2,71,lookup,On which host does the traefik container run?,0,0,abstain,False,I don't know.,"MATCH (c:Container {name: 'traefik'})-[:RUNS]->(h:Host) RETURN h.name, h.os"
+2026-10-29T19:52:02,large,qwen3.5:4b,fewshot,0.7,2,72,lookup,What image does the traefik container use?,0,0,abstain,False,I don't know.,MATCH (c:Container {name: 'traefik'})-[:DEPENDS_ON]->(dep:Container) RETURN dep.image
+2026-10-29T19:52:06,large,qwen3.5:4b,fewshot,0.7,2,81,lookup,On which host does the uptime-kuma container run?,0,0,abstain,False,I don't know where the uptime-kuma container runs because the database results are empty.,MATCH (c:Container {name: 'uptime-kuma'})-[:RUNS]->(h:Host) RETURN h.name
+2026-10-29T19:52:10,large,qwen3.5:4b,fewshot,0.7,2,82,lookup,What image does the uptime-kuma container use?,0,0,abstain,False,I don't know.,"MATCH (c:Container {name: 'uptime-kuma'})-[:HAS_SECRET]->(s:Secret) RETURN s.value AS secret_value, c.image AS image"
+2026-10-29T19:52:13,large,qwen3.5:4b,fewshot,0.7,2,83,lookup,What status does the uptime-kuma container have?,1,1,ok,False,The uptime-kuma container has a running status.,MATCH (c:Container {name: 'uptime-kuma'}) RETURN c.status
+2026-10-29T19:52:16,large,qwen3.5:4b,fewshot,0.7,2,87,lookup,What image does the mailpit container use?,0,0,error,False,The query could not be completed.,"MATCH (c:Container {name: 'mailpit'})-[:EXPOSES]->(p:Port)-<-[:HAS_SECRET]->(s:Secret) RETURN p.image, s.value"
+2026-10-29T19:52:20,large,qwen3.5:4b,fewshot,0.7,2,92,lookup,Which containers depend on redis?,1,1,ok,False,The containers that depend on redis are nextcloud and coolify.,MATCH (c:Container)-[:DEPENDS_ON]->(d:Container {name: 'redis'}) RETURN c.name
+2026-10-29T19:52:23,large,qwen3.5:4b,fewshot,0.7,2,93,lookup,Which containers depend on prometheus?,1,1,ok,False,The container that depends on prometheus is grafana.,MATCH (c1:Container {name: 'prometheus'})<-[:DEPENDS_ON]-(c2:Container) RETURN c2.name
+2026-10-29T19:52:27,large,qwen3.5:4b,fewshot,0.7,2,96,lookup,Which containers depend on minio?,1,1,ok,False,The containers that depend on minio are nextcloud and loki.,MATCH (c1:Container {name: 'minio'})<-[:DEPENDS_ON]-(c2:Container) RETURN c2.name
+2026-10-29T19:52:30,large,qwen3.5:4b,fewshot,0.7,2,98,lookup,Which containers expose port 443?,1,1,ok,False,The container that exposes port 443 is traefik.,MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 443}) RETURN c.name
+2026-10-29T19:52:34,large,qwen3.5:4b,fewshot,0.7,2,100,lookup,Which containers expose port 3000?,0,0,denial,False,No containers expose port 3000.,MATCH (c:Container {image: 'nginx'})-[:EXPOSES]->(p:Port {number: 3000}) RETURN c.name
+2026-10-29T19:52:38,large,qwen3.5:4b,fewshot,0.7,2,106,lookup,Which containers expose port 8000?,1,1,ok,False,The container that exposes port 8000 is coolify.,MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 8000}) RETURN c.name
+2026-10-29T19:52:41,large,qwen3.5:4b,fewshot,0.7,2,108,lookup,Which containers expose port 8080?,1,1,ok,False,The containers exposing port 8080 are open-webui and nextcloud.,MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 8080}) RETURN c.name
+2026-10-29T19:52:45,large,qwen3.5:4b,fewshot,0.7,2,109,lookup,Which containers expose port 8081?,1,1,ok,False,The container vaultwarden exposes port 8081.,MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 8081}) RETURN c.name
+2026-10-29T19:52:49,large,qwen3.5:4b,fewshot,0.7,2,111,lookup,Which containers expose port 9001?,1,1,ok,False,The container that exposes port 9001 is minio.,MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 9001}) RETURN c.name
+2026-10-29T19:52:52,large,qwen3.5:4b,fewshot,0.7,2,115,count,How many ports are public?,1,1,ok,False,There are 10 public ports.,MATCH (p:Port {public: true}) RETURN count(p)
+2026-10-29T19:52:55,large,qwen3.5:4b,fewshot,0.7,2,116,count,How many containers are running?,0,0,wrong,False,There are 15 containers running.,MATCH (c:Container) RETURN count(c)
+2026-10-29T19:52:58,large,qwen3.5:4b,fewshot,0.7,2,121,list,List all hosts.,1,1,ok,False,"The hosts are pve-node1, pve-node2, senku02, nas01, and edge01.",MATCH (h:Host) RETURN h.name
+2026-10-29T19:53:02,large,qwen3.5:4b,fewshot,0.7,2,122,two-hop,Which hosts run the containers that coolify depends on?,1,1,ok,False,The host pve-node1 runs the containers that Coolify depends on.,MATCH (c1:Container {name: 'coolify'})-[:DEPENDS_ON]->(c2:Container)<-[:RUNS]-(h:Host) RETURN h.name
+2026-10-29T19:53:06,large,qwen3.5:4b,fewshot,0.7,2,125,two-hop,Which hosts run the containers that open-webui depends on?,0,0,abstain,False,I don't know because the results are empty.,MATCH (c1:Container {name: 'open-webui'})-[:DEPENDS_ON]->(c2:Container)-[:RUNS]->(h:Host) RETURN h.name
+2026-10-29T19:53:10,large,qwen3.5:4b,fewshot,0.7,2,127,two-hop,Which hosts run the containers that gitea depends on?,0,0,abstain,False,I don't know because the database results are empty.,MATCH (c1:Container {name: 'gitea'})-[:DEPENDS_ON]->(c2:Container)-[:RUNS]->(h:Host) RETURN h.name
+2026-10-29T19:53:13,large,qwen3.5:4b,fewshot,0.7,2,128,two-hop,Which other containers run on the same host as coolify?,1,1,ok,False,The containers running on the same host as coolify are redis and postgres.,MATCH (c:Container {name: 'coolify'})<-[:RUNS]-(h:Host)-[:RUNS]->(o:Container) WHERE o.name <> 'coolify' RETURN o.name
+2026-10-29T19:53:17,large,qwen3.5:4b,fewshot,0.7,2,132,two-hop,Which other containers run on the same host as prometheus?,0,0,abstain,False,I don't know.,MATCH (c:Container {name: 'prometheus'})-[:RUNS]->(h:Host)-[:RUNS]->(o:Container) WHERE o.name <> 'prometheus' RETURN o.name
+2026-10-29T19:53:21,large,qwen3.5:4b,fewshot,0.7,2,133,two-hop,Which other containers run on the same host as loki?,1,1,ok,False,The other containers running on the same host as Loki are Prometheus and Grafana.,MATCH (c:Container {name: 'loki'})<-[:RUNS]-(h:Host)-[:RUNS]->(o:Container) WHERE o.name <> 'loki' RETURN o.name
+2026-10-29T19:53:25,large,qwen3.5:4b,fewshot,0.7,2,136,two-hop,Which other containers run on the same host as minio?,0,0,abstain,False,I don't know.,MATCH (c:Container {name: 'min'})<-[:RUNS]-(h:Host)-[:RUNS]->(o:Container) WHERE o.name <> 'min' RETURN o.name
+2026-10-29T19:53:29,large,qwen3.5:4b,fewshot,0.7,2,139,two-hop,Which other containers run on the same host as traefik?,1,1,ok,False,"The other containers running on the same host as traefik are mailpit, uptime-kuma, and vaultwarden.",MATCH (c1:Container {name: 'traefik'})<-[:RUNS]-(h:Host)-[:RUNS]->(o:Container) WHERE o.name <> 'traefik' RETURN o.name
+2026-10-29T19:53:33,large,qwen3.5:4b,fewshot,0.7,2,141,two-hop,Which other containers run on the same host as uptime-kuma?,1,1,ok,False,"The containers running on the same host as uptime-kuma are mailpit, vaultwarden, and traefik.",MATCH (c1:Container {name: 'uptime-kuma'})<-[:RUNS]-(h:Host)-[:RUNS]->(c2:Container) WHERE c2.name <> 'uptime-kuma' RETURN c2.name
+2026-10-29T19:53:37,large,qwen3.5:4b,fewshot,0.7,2,145,two-hop,Which containers depend on a container that runs on senku02?,0,0,abstain,False,I don't know.,MATCH (c1:Container {name: 'senku02'})<-[:DEPENDS_ON]-(d:Container)<-[:RUNS]-(h:Host) RETURN d.name
+2026-10-29T19:53:40,large,qwen3.5:4b,fewshot,0.7,2,146,two-hop,Which containers depend on a container that runs on nas01?,1,1,ok,False,nextcloud and loki depend on minio.,"MATCH (c:Container)-[:DEPENDS_ON]->(d:Container)<-[:RUNS]-(h:Host {name: 'nas01'}) RETURN c.name, d.name"
+2026-10-29T19:53:44,large,qwen3.5:4b,fewshot,0.7,2,148,two-hop,Which port does the container that loki depends on expose?,0,0,wrong,False,Port 9000.,"MATCH (c1:Container {name: 'loki'})-[:DEPENDS_ON]->(c2:Container)-[:EXPOSES]->(p:Port) RETURN p.public, p.number"
+2026-10-29T19:53:48,large,qwen3.5:4b,fewshot,0.7,2,149,two-hop,Which port does the container that open-webui depends on expose?,1,1,ok,False,The container that open-webui depends on exposes port 11434.,MATCH (c1:Container {name: 'open-webui'})-[:DEPENDS_ON]->(c2:Container)-[:EXPOSES]->(p:Port) RETURN p.number
+2026-10-29T19:53:51,large,qwen3.5:4b,fewshot,0.7,2,150,negative,Which container exposes port 9999?,1,1,ok,False,None.,MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 9999}) RETURN c.name
+2026-10-29T19:53:55,large,qwen3.5:4b,fewshot,0.7,2,152,negative,Which containers depend on mailpit?,1,0,abstain,False,I don't know which containers depend on mailpit because the database query returned no results.,MATCH (c:Container {name: 'mailpit'})<-[:DEPENDS_ON]-(d:Container) RETURN d.name
+2026-10-29T19:53:59,large,qwen3.5:4b,fewshot,0.7,3,1,lookup,Which containers run on host pve-node1?,1,1,ok,False,"The containers running on host pve-node1 are redis, postgres, and coolify.",MATCH (h:Host {name: 'pve-node1'})-[:RUNS]->(c:Container) RETURN c.name
+2026-10-29T19:54:02,large,qwen3.5:4b,fewshot,0.7,3,3,lookup,What is the operating system of host pve-node1?,1,1,ok,False,The operating system of host pve-node1 is Proxmox VE.,MATCH (h:Host {name: 'pve-node1'}) RETURN h.os
+2026-10-29T19:54:05,large,qwen3.5:4b,fewshot,0.7,3,6,lookup,What is the operating system of host pve-node2?,1,1,ok,False,The operating system of host pve-node2 is Proxmox VE.,MATCH (h:Host {name: 'pve-node2'}) RETURN h.os
+2026-10-29T19:54:09,large,qwen3.5:4b,fewshot,0.7,3,7,lookup,Which containers run on host senku02?,1,1,ok,False,The containers running on host senku02 are open-webui and ollama.,MATCH (h:Host {name: 'senku02'})-[:RUNS]->(c:Container) RETURN c.name
+2026-10-29T19:54:12,large,qwen3.5:4b,fewshot,0.7,3,8,count,How many containers does senku02 run?,1,1,ok,False,Senku02 runs 2 containers.,MATCH (h:Host {name: 'senku02'})-[:RUNS]->(c:Container) RETURN c.name
+2026-10-29T19:54:16,large,qwen3.5:4b,fewshot,0.7,3,13,lookup,Which containers run on host edge01?,1,1,ok,False,"The containers running on host edge01 are mailpit, uptime-kuma, vaultwarden, and traefik.",MATCH (h:Host {name: 'edge01'})-[:RUNS]->(c:Container) RETURN c.name
+2026-10-29T19:54:20,large,qwen3.5:4b,fewshot,0.7,3,16,lookup,Which host runs the coolify container?,0,0,abstain,False,I don't know.,MATCH (h:Host {name: 'coolify'})-[:RUNS]->(c:Container) RETURN h.name
+2026-10-29T19:54:23,large,qwen3.5:4b,fewshot,0.7,3,17,lookup,What image does the coolify container use?,0,0,wrong,False,The Coolify container uses the postgres:16 and redis:7 images.,MATCH (c:Container {name: 'coolify'})-[:DEPENDS_ON]->(d:Container) RETURN d.image
+2026-10-29T19:54:27,large,qwen3.5:4b,fewshot,0.7,3,24,lookup,Which port does the postgres container expose?,1,1,ok,False,The postgres container exposes port 5432.,MATCH (c:Container {name: 'postgres'})-[:EXPOSES]->(p:Port) RETURN p.number
+2026-10-29T19:54:30,large,qwen3.5:4b,fewshot,0.7,3,25,negative,What does the postgres container depend on?,1,0,abstain,False,"The database results are empty, so I do not know what the postgres container depends on.",MATCH (c1:Container {name: 'postgres'})-[:DEPENDS_ON]->(d2:Container) RETURN d2.name
+2026-10-29T19:54:34,large,qwen3.5:4b,fewshot,0.7,3,27,lookup,What image does the redis container use?,0,0,abstain,False,I don't know.,MATCH (c:Container {image: 'redis'})-[:HAS_SECRET]->(s:Secret) RETURN s.name
+2026-10-29T19:54:37,large,qwen3.5:4b,fewshot,0.7,3,29,lookup,Which port does the redis container expose?,1,1,ok,False,The redis container exposes port 6379.,MATCH (c:Container {name: 'redis'})-[:EXPOSES]->(p:Port) RETURN p.number
+2026-10-29T19:54:41,large,qwen3.5:4b,fewshot,0.7,3,30,negative,What does the redis container depend on?,1,0,abstain,False,"The provided database results are empty, so I do not know what the redis container depends on.",MATCH (c:Container {name: 'redis'})-[:DEPENDS_ON]->(d:Container) RETURN d.name
+2026-10-29T19:54:44,large,qwen3.5:4b,fewshot,0.7,3,31,lookup,On which host does the grafana container run?,1,1,ok,False,The grafana container runs on pve-node2.,MATCH (c:Container {name: 'grafana'})<-[:RUNS]-(h:Host) RETURN h.name
+2026-10-29T19:54:48,large,qwen3.5:4b,fewshot,0.7,3,35,lookup,What does the grafana container depend on?,1,1,ok,False,The grafana container depends on Loki and Prometheus.,MATCH (c:Container {name: 'grafana'})-[:DEPENDS_ON]->(d:Container) RETURN d.name
+2026-10-29T19:54:51,large,qwen3.5:4b,fewshot,0.7,3,38,lookup,What status does the prometheus container have?,1,1,ok,False,The prometheus container has a running status.,MATCH (c:Container {name: 'prometheus'}) RETURN c.status
+2026-10-29T19:54:54,large,qwen3.5:4b,fewshot,0.7,3,43,lookup,What status does the loki container have?,1,1,ok,False,The loki container is stopped.,MATCH (c:Container {name: 'loki'})-[:EXPOSES]->(p:Port) WHERE p.public = false RETURN c.status
+2026-10-29T19:54:58,large,qwen3.5:4b,fewshot,0.7,3,45,lookup,What does the loki container depend on?,1,1,ok,False,The loki container depends on minio.,MATCH (c:Container {name: 'loki'})-[:DEPENDS_ON]->(d:Container) RETURN d.name
+2026-10-29T19:55:02,large,qwen3.5:4b,fewshot,0.7,3,54,lookup,Which port does the open-webui container expose?,1,1,ok,False,The open-webui container exposes port 8080.,"MATCH (c:Container {name: 'open-webui'})-[:EXPOSES]->(p:Port) RETURN p.number, p.public"
+2026-10-29T19:55:05,large,qwen3.5:4b,fewshot,0.7,3,55,lookup,What does the open-webui container depend on?,1,1,ok,False,The open-webui container depends on ollama.,MATCH (c:Container {name: 'open-webui'})-[:DEPENDS_ON]->(d:Container) RETURN d.name
+2026-10-29T19:55:09,large,qwen3.5:4b,fewshot,0.7,3,56,lookup,Which host runs the minio container?,1,1,ok,False,The minio container is run by the host nas01.,MATCH (h:Host)-[:RUNS]->(c:Container {name: 'minio'}) RETURN h.name
+2026-10-29T19:55:12,large,qwen3.5:4b,fewshot,0.7,3,57,lookup,What image does the minio container use?,1,1,ok,False,The minio container uses the image minio/minio:latest.,MATCH (c:Container {name: 'minio'}) RETURN c.image
+2026-10-29T19:55:16,large,qwen3.5:4b,fewshot,0.7,3,59,lookup,Which ports does the minio container expose?,1,1,ok,False,The minio container exposes ports 9001 and 9000.,"MATCH (c:Container {name: 'minio'})-[:EXPOSES]->(p:Port) RETURN p.number, p.public, p.protocol"
+2026-10-29T19:55:19,large,qwen3.5:4b,fewshot,0.7,3,64,lookup,Which port does the nextcloud container expose?,1,1,ok,False,The Nextcloud container exposes port 8080.,"MATCH (c:Container {name: 'nextcloud'})-[:EXPOSES]->(p:Port) RETURN p.number, p.public, p.protocol"
+2026-10-29T19:55:23,large,qwen3.5:4b,fewshot,0.7,3,65,lookup,What does the nextcloud container depend on?,1,1,ok,False,"The nextcloud container depends on redis, minio, and postgres.",MATCH (c1:Container {name: 'nextcloud'})-[:DEPENDS_ON]->(c2:Container) RETURN c2.name
+2026-10-29T19:55:27,large,qwen3.5:4b,fewshot,0.7,3,66,lookup,Which host runs the gitea container?,1,1,ok,False,The gitea container is run on nas01.,MATCH (h:Host {name: h.name})-[:RUNS]->(c:Container {name: 'gitea'}) RETURN h.name
+2026-10-29T19:55:30,large,qwen3.5:4b,fewshot,0.7,3,69,lookup,Which port does the gitea container expose?,1,1,ok,False,The gitea container exposes port 3000.,"MATCH (c:Container {name: 'gitea'})-[:EXPOSES]->(p:Port) RETURN p.number, p.public"
+2026-10-29T19:55:34,large,qwen3.5:4b,fewshot,0.7,3,71,lookup,On which host does the traefik container run?,0,0,abstain,False,I don't know because the database results are empty.,MATCH (c:Container {name: 'traefik'})-[:RUNS]->(h:Host) RETURN h.name
+2026-10-29T19:55:37,large,qwen3.5:4b,fewshot,0.7,3,72,lookup,What image does the traefik container use?,1,1,ok,False,The traefik container uses the traefik:v3 image.,MATCH (c:Container {name: 'traefik'}) RETURN c.image
+2026-10-29T19:55:40,large,qwen3.5:4b,fewshot,0.7,3,81,lookup,On which host does the uptime-kuma container run?,0,0,abstain,False,I don't know.,MATCH (c:Container {name: 'uptime-kuma'})-[:RUNS]->(h:Host) RETURN h.name
+2026-10-29T19:55:44,large,qwen3.5:4b,fewshot,0.7,3,82,lookup,What image does the uptime-kuma container use?,1,1,ok,False,The uptime-kuma container uses the louislam/uptime-kuma:1 image.,"MATCH (c:Container {name: 'uptime-kuma'})-[:EXPOSES]->(p:Port) RETURN p.protocol, c.image"
+2026-10-29T19:55:47,large,qwen3.5:4b,fewshot,0.7,3,83,lookup,What status does the uptime-kuma container have?,1,1,ok,False,The uptime-kuma container has a running status.,MATCH (c:Container {name: 'uptime-kuma'}) RETURN c.status
+2026-10-29T19:55:50,large,qwen3.5:4b,fewshot,0.7,3,87,lookup,What image does the mailpit container use?,1,1,ok,False,The mailpit container uses the axllent/mailpit:v1 image.,MATCH (c:Container {name: 'mailpit'}) RETURN c.image
+2026-10-29T19:55:54,large,qwen3.5:4b,fewshot,0.7,3,92,lookup,Which containers depend on redis?,1,1,ok,False,The containers that depend on Redis are nextcloud and coolify.,MATCH (c:Container)-[:DEPENDS_ON]->(d:Container {name: 'redis'}) RETURN c.name
+2026-10-29T19:55:57,large,qwen3.5:4b,fewshot,0.7,3,93,lookup,Which containers depend on prometheus?,1,1,ok,False,Only grafana depends on prometheus.,MATCH (c:Container {name: 'prometheus'})<-[:DEPENDS_ON]->(d:Container) RETURN d.name
+2026-10-29T19:56:01,large,qwen3.5:4b,fewshot,0.7,3,96,lookup,Which containers depend on minio?,0,0,denial,False,No containers depend on MinIO based on the provided database results.,MATCH (c:Container {name: 'minio'})-[:DEPENDS_ON]->(d:Container) RETURN d.name
+2026-10-29T19:56:04,large,qwen3.5:4b,fewshot,0.7,3,98,lookup,Which containers expose port 443?,0,0,denial,False,No containers expose port 443.,MATCH (c:Container {image: 'ubuntu'})-[:EXPOSES]->(p:Port {number: 443}) RETURN c.name
+2026-10-29T19:56:08,large,qwen3.5:4b,fewshot,0.7,3,100,lookup,Which containers expose port 3000?,1,1,ok,False,The containers that expose port 3000 are grafana and gitea.,MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 3000}) RETURN c.name
+2026-10-29T19:56:12,large,qwen3.5:4b,fewshot,0.7,3,106,lookup,Which containers expose port 8000?,1,1,ok,False,"The container ""coolify"" exposes port 8000.",MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 8000}) RETURN c.name
+2026-10-29T19:56:15,large,qwen3.5:4b,fewshot,0.7,3,108,lookup,Which containers expose port 8080?,1,1,ok,False,The containers that expose port 8080 are open-webui and nextcloud.,MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 8080}) RETURN c.name
+2026-10-29T19:56:19,large,qwen3.5:4b,fewshot,0.7,3,109,lookup,Which containers expose port 8081?,1,1,ok,False,The container vaultwarden exposes port 8081.,MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 8081}) RETURN c.name
+2026-10-29T19:56:22,large,qwen3.5:4b,fewshot,0.7,3,111,lookup,Which containers expose port 9001?,1,1,ok,False,minio is a container that exposes port 9001.,MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 9001}) RETURN c.name
+2026-10-29T19:56:25,large,qwen3.5:4b,fewshot,0.7,3,115,count,How many ports are public?,1,1,ok,False,There are 10 public ports.,MATCH (p:Port) WHERE p.public = true RETURN count(p)
+2026-10-29T19:56:29,large,qwen3.5:4b,fewshot,0.7,3,116,count,How many containers are running?,1,1,ok,False,There are 12 containers running.,MATCH (c:Container {status: 'running'}) RETURN count(c)
+2026-10-29T19:56:32,large,qwen3.5:4b,fewshot,0.7,3,121,list,List all hosts.,1,1,ok,False,"The hosts are pve-node1, pve-node2, senku02, nas01, and edge01.",MATCH (h:Host) RETURN h.name
+2026-10-29T19:56:36,large,qwen3.5:4b,fewshot,0.7,3,122,two-hop,Which hosts run the containers that coolify depends on?,0,0,wrong,False,No hosts were found running the containers that Coolify depends on.,"MATCH (h:Host)-[:RUNS]->(c1:Container {image: 'coolify'})-[:DEPENDS_ON]->(c2:Container) RETURN h.name, c1.image, c2.image"
+2026-10-29T19:56:40,large,qwen3.5:4b,fewshot,0.7,3,125,two-hop,Which hosts run the containers that open-webui depends on?,0,0,wrong,False,No hosts were found running the containers that open-webui depends on.,MATCH (c1:Container {name: 'open-webui'})<-[:DEPENDS_ON]-(c2:Container)<-[:RUNS]-(h:Host) RETURN h.name
+2026-10-29T19:56:44,large,qwen3.5:4b,fewshot,0.7,3,127,two-hop,Which hosts run the containers that gitea depends on?,0,0,abstain,False,I don't know because the database results are empty.,MATCH (c:Container {name: 'gitea'})-[:DEPENDS_ON]->(dep:Container)-[:RUNS]->(h:Host) RETURN h.name
+2026-10-29T19:56:48,large,qwen3.5:4b,fewshot,0.7,3,128,two-hop,Which other containers run on the same host as coolify?,1,1,ok,False,The other containers running on the same host as coolify are redis and postgres.,MATCH (c:Container {name: 'coolify'})<-[:RUNS]-(h:Host)-[:RUNS]->(o:Container) WHERE o.name <> 'coolify' RETURN o.name
+2026-10-29T19:56:52,large,qwen3.5:4b,fewshot,0.7,3,132,two-hop,Which other containers run on the same host as prometheus?,1,1,ok,False,The other containers running on the same host as prometheus are loki and grafana.,MATCH (c:Container {name: 'prometheus'})<-[:RUNS]-(h:Host)-[:RUNS]->(other:Container) WHERE other.name <> 'prometheus' RETURN other.name
+2026-10-29T19:56:56,large,qwen3.5:4b,fewshot,0.7,3,133,two-hop,Which other containers run on the same host as loki?,1,1,ok,False,The other containers running on the same host as loki are prometheus and grafana.,MATCH (c1:Container {name: 'loki'})<-[:RUNS]-(h:Host)-[:RUNS]->(c2:Container) WHERE c2.name <> 'loki' RETURN c2.name
+2026-10-29T19:57:00,large,qwen3.5:4b,fewshot,0.7,3,136,two-hop,Which other containers run on the same host as minio?,0,0,denial,False,No other containers run on the same host as minio.,MATCH (c1:Container {name: 'min'})<-[:RUNS]-(h:Host)-[:RUNS]->(c2:Container) WHERE c2.name <> 'min' RETURN c2.name
+2026-10-29T19:57:04,large,qwen3.5:4b,fewshot,0.7,3,139,two-hop,Which other containers run on the same host as traefik?,1,1,ok,False,"The containers running on the same host as traefik are mailpit, uptime-kuma, and vaultwarden.",MATCH (c1:Container {name: 'traefik'})<-[:RUNS]-(h:Host)-[:RUNS]->(c2:Container) WHERE c2.name <> 'traefik' RETURN c2.name
+2026-10-29T19:57:08,large,qwen3.5:4b,fewshot,0.7,3,141,two-hop,Which other containers run on the same host as uptime-kuma?,1,1,ok,False,"mailpit, vaultwarden, and traefik run on the same host as uptime-kuma.",MATCH (c1:Container {name: 'uptime-kuma'})<-[:RUNS]-(h:Host)-[:RUNS]->(c2:Container) WHERE c2.name <> 'uptime-kuma' RETURN c2.name
+2026-10-29T19:57:11,large,qwen3.5:4b,fewshot,0.7,3,145,two-hop,Which containers depend on a container that runs on senku02?,0,0,denial,False,No containers depend on a container running on senku02.,MATCH (c:Container {name: 'senku02'})<-[:DEPENDS_ON]-(dc:Container)-[:RUNS]->(h:Host) RETURN dc.name
+2026-10-29T19:57:15,large,qwen3.5:4b,fewshot,0.7,3,146,two-hop,Which containers depend on a container that runs on nas01?,0,0,abstain,False,I don't know because the database results are empty.,MATCH (c:Container {name: 'nas01'})<-[:RUNS]-(h:Host)-[:DEPENDS_ON]->(d:Container) RETURN d.name
+2026-10-29T19:57:19,large,qwen3.5:4b,fewshot,0.7,3,148,two-hop,Which port does the container that loki depends on expose?,1,1,ok,False,The container that Loki depends on exposes ports 9000 and 9001.,MATCH (c:Container {name: 'loki'})-[:DEPENDS_ON]->(d:Container)-[:EXPOSES]->(p:Port) RETURN p.number
+2026-10-29T19:57:23,large,qwen3.5:4b,fewshot,0.7,3,149,two-hop,Which port does the container that open-webui depends on expose?,1,1,ok,False,The container that open-webui depends on exposes port 11434.,"MATCH (c1:Container {name: 'open-webui'})-[:DEPENDS_ON]->(c2:Container)-[:EXPOSES]->(p:Port) RETURN p.number, c2.name"
+2026-10-29T19:57:26,large,qwen3.5:4b,fewshot,0.7,3,150,negative,Which container exposes port 9999?,0,0,abstain,False,I don't know.,MATCH (c:Container)-[:EXPOSES]->(p:Port {number: 9999}) RETURN c.name
+2026-10-29T19:57:30,large,qwen3.5:4b,fewshot,0.7,3,152,negative,Which containers depend on mailpit?,1,1,ok,False,No containers depend on mailpit.,MATCH (c:Container {name: 'mailpit'})-[:DEPENDS_ON]->(d:Container) RETURN d.name

@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this repository, please cite it as below."
+title: "ragsec-lab: a proof-of-concept lab for measuring security weaknesses in self-hosted text-to-Cypher GraphRAG pipelines"
+type: software
+authors:
+  - family-names: "Sekizkardeş"
+    given-names: "Mustafa"
+repository-code: "https://github.com/Mhitra/ragsec-lab"
+license: MIT
+version: 0.1.0
+date-released: 2026-10-29
+keywords:
+  - LLM security
+  - prompt injection
+  - text-to-Cypher
+  - GraphRAG
+  - Neo4j
+abstract: "A minimal question-answering pipeline over a Neo4j graph (a model writes Cypher, the database runs it, a second model call writes the answer) with switchable protections, used to measure what small local models get wrong and what protections do. Synthetic data only."

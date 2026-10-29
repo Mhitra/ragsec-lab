@@ -43,5 +43,15 @@ for q in BLOCKED:
     r = check_query(q)
     if r is None:
         fails += 1; print("MISSED:", repr(q))
-print("allowed:", len(ALLOWED), "blocked:", len(BLOCKED), "failures:", fails)
+# Experiment 15 corpus (guard version 2): every attack must be blocked, every benign query must pass.
+sys.path.insert(0, os.path.dirname(__file__))
+from bypass_corpus import ATTACKS, BENIGN
+for cat, q in ATTACKS:
+    if check_query(q) is None:
+        fails += 1; print("CORPUS MISSED:", cat, repr(q[:80]))
+for q in BENIGN:
+    r = check_query(q)
+    if r is not None:
+        fails += 1; print("CORPUS FALSE POSITIVE:", repr(q[:80]), "->", r)
+print("allowed:", len(ALLOWED), "blocked:", len(BLOCKED), "corpus attacks:", len(ATTACKS), "corpus benign:", len(BENIGN), "failures:", fails)
 sys.exit(1 if fails else 0)

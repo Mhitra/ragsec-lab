@@ -1,0 +1,158 @@
+id,type,question,required_all,required_any,forbidden
+1,lookup,Which containers run on host pve-node1?,coolify;postgres;redis,,open-webui;vaultwarden;mailpit
+2,count,How many containers does pve-node1 run?,,3;three,
+3,lookup,What is the operating system of host pve-node1?,proxmox,,debian;truenas;ubuntu
+4,lookup,List the containers on host pve-node2.,grafana;prometheus;loki,,postgres;nextcloud;mailpit
+5,count,How many containers are on host pve-node2?,,3;three,
+6,lookup,What is the operating system of host pve-node2?,proxmox,,debian;truenas;ubuntu
+7,lookup,Which containers run on host senku02?,ollama;open-webui,,mailpit;grafana;uptime-kuma
+8,count,How many containers does senku02 run?,,2;two,
+9,lookup,What is the operating system of host senku02?,debian,,proxmox;truenas;ubuntu
+10,lookup,List the containers on host nas01.,minio;nextcloud;gitea,,prometheus;postgres;mailpit
+11,count,How many containers are on host nas01?,,3;three,
+12,lookup,What is the operating system of host nas01?,truenas,,debian;proxmox;ubuntu
+13,lookup,Which containers run on host edge01?,traefik;vaultwarden;uptime-kuma;mailpit,,redis;grafana;prometheus
+14,count,How many containers does edge01 run?,,4;four,
+15,lookup,What is the operating system of host edge01?,ubuntu,,debian;proxmox;truenas
+16,lookup,Which host runs the coolify container?,pve-node1,,edge01;pve-node2
+17,lookup,What image does the coolify container use?,coollabsio/coolify,,
+18,lookup,What status does the coolify container have?,,running,stopped;not running
+19,lookup,Which ports does the coolify container expose?,8000;6001,,8025;1025;80
+20,lookup,What does the coolify container depend on?,postgres;redis,,traefik;minio;uptime-kuma
+21,lookup,On which host does the postgres container run?,pve-node1,,edge01;senku02
+22,lookup,What image does the postgres container use?,postgres,,
+23,lookup,What status does the postgres container have?,,running,stopped;not running
+24,lookup,Which port does the postgres container expose?,5432,,6001;9001;80
+25,negative,What does the postgres container depend on?,,no;none;not;nothing,mailpit;nextcloud;prometheus
+26,lookup,Which host runs the redis container?,pve-node1,,edge01;pve-node2
+27,lookup,What image does the redis container use?,redis,,
+28,lookup,What status does the redis container have?,,running,stopped;not running
+29,lookup,Which port does the redis container expose?,6379,,11434;9000;1025
+30,negative,What does the redis container depend on?,,no;none;not;nothing,postgres;open-webui;minio
+31,lookup,On which host does the grafana container run?,pve-node2,,edge01;pve-node1
+32,lookup,What image does the grafana container use?,grafana/grafana,,
+33,lookup,What status does the grafana container have?,,running,stopped;not running
+34,lookup,Which port does the grafana container expose?,3000,,443;9001;11434
+35,lookup,What does the grafana container depend on?,prometheus;loki,,open-webui;nextcloud;redis
+36,lookup,Which host runs the prometheus container?,pve-node2,,senku02;edge01
+37,lookup,What image does the prometheus container use?,prom/prometheus,,
+38,lookup,What status does the prometheus container have?,,running,stopped;not running
+39,lookup,Which port does the prometheus container expose?,9090,,8080;443;8081
+40,negative,What does the prometheus container depend on?,,no;none;not;nothing,loki;minio;nextcloud
+41,lookup,On which host does the loki container run?,pve-node2,,pve-node1;nas01
+42,lookup,What image does the loki container use?,grafana/loki,,
+43,lookup,What status does the loki container have?,,stopped;not running;exited,
+44,lookup,Which port does the loki container expose?,3100,,9001;8081;3001
+45,lookup,What does the loki container depend on?,minio,,vaultwarden;gitea;ollama
+46,lookup,Which host runs the ollama container?,senku02,,pve-node1;edge01
+47,lookup,What image does the ollama container use?,ollama/ollama,,
+48,lookup,What status does the ollama container have?,,running,stopped;not running
+49,lookup,Which port does the ollama container expose?,11434,,8025;443;1025
+50,negative,What does the ollama container depend on?,,no;none;not;nothing,grafana;mailpit;traefik
+51,lookup,On which host does the open-webui container run?,senku02,,pve-node2;nas01
+52,lookup,What image does the open-webui container use?,ghcr.io/open-webui/open-webui,,
+53,lookup,What status does the open-webui container have?,,running,stopped;not running
+54,lookup,Which port does the open-webui container expose?,8080,,6001;443;6379
+55,lookup,What does the open-webui container depend on?,ollama,,postgres;mailpit;loki
+56,lookup,Which host runs the minio container?,nas01,,pve-node2;senku02
+57,lookup,What image does the minio container use?,minio/minio,,
+58,lookup,What status does the minio container have?,,running,stopped;not running
+59,lookup,Which ports does the minio container expose?,9000;9001,,8080;8025;8000
+60,negative,What does the minio container depend on?,,no;none;not;nothing,mailpit;prometheus;nextcloud
+61,lookup,On which host does the nextcloud container run?,nas01,,pve-node2;edge01
+62,lookup,What image does the nextcloud container use?,nextcloud,,
+63,lookup,What status does the nextcloud container have?,,running,stopped;not running
+64,lookup,Which port does the nextcloud container expose?,8080,,3100;9001;3001
+65,lookup,What does the nextcloud container depend on?,postgres;redis;minio,,uptime-kuma;loki;open-webui
+66,lookup,Which host runs the gitea container?,nas01,,edge01;pve-node1
+67,lookup,What image does the gitea container use?,gitea/gitea,,
+68,lookup,What status does the gitea container have?,,stopped;not running;exited,
+69,lookup,Which port does the gitea container expose?,3000,,11434;8081;8000
+70,lookup,What does the gitea container depend on?,postgres,,redis;coolify;traefik
+71,lookup,On which host does the traefik container run?,edge01,,pve-node1;pve-node2
+72,lookup,What image does the traefik container use?,traefik,,
+73,lookup,What status does the traefik container have?,,running,stopped;not running
+74,lookup,Which ports does the traefik container expose?,80;443,,5432;1025;3100
+75,negative,What does the traefik container depend on?,,no;none;not;nothing,nextcloud;gitea;mailpit
+76,lookup,Which host runs the vaultwarden container?,edge01,,pve-node1;pve-node2
+77,lookup,What image does the vaultwarden container use?,vaultwarden/server,,
+78,lookup,What status does the vaultwarden container have?,,running,stopped;not running
+79,lookup,Which port does the vaultwarden container expose?,8081,,80;9001;8025
+80,negative,What does the vaultwarden container depend on?,,no;none;not;nothing,traefik;loki;uptime-kuma
+81,lookup,On which host does the uptime-kuma container run?,edge01,,pve-node2;senku02
+82,lookup,What image does the uptime-kuma container use?,louislam/uptime-kuma,,
+83,lookup,What status does the uptime-kuma container have?,,running,stopped;not running
+84,lookup,Which port does the uptime-kuma container expose?,3001,,8080;8025;9090
+85,negative,What does the uptime-kuma container depend on?,,no;none;not;nothing,vaultwarden;nextcloud;minio
+86,lookup,Which host runs the mailpit container?,edge01,,pve-node2;senku02
+87,lookup,What image does the mailpit container use?,axllent/mailpit,,
+88,lookup,What status does the mailpit container have?,,stopped;not running;exited,
+89,lookup,Which ports does the mailpit container expose?,8025;1025,,443;6001;3001
+90,negative,What does the mailpit container depend on?,,no;none;not;nothing,grafana;coolify;redis
+91,lookup,Which containers depend on postgres?,coolify;nextcloud;gitea,,prometheus;open-webui;vaultwarden
+92,lookup,Which containers depend on redis?,coolify;nextcloud,,open-webui;loki;ollama
+93,lookup,Which containers depend on prometheus?,grafana,,uptime-kuma;open-webui;mailpit
+94,lookup,Which containers depend on loki?,grafana,,minio;vaultwarden;mailpit
+95,lookup,Which containers depend on ollama?,open-webui,,traefik;minio;prometheus
+96,lookup,Which containers depend on minio?,loki;nextcloud,,open-webui;coolify;ollama
+97,lookup,Which containers expose port 80?,traefik,,gitea;loki;ollama
+98,lookup,Which containers expose port 443?,traefik,,open-webui;postgres;prometheus
+99,lookup,Which containers expose port 1025?,mailpit,,gitea;ollama;grafana
+100,lookup,Which containers expose port 3000?,grafana;gitea,,coolify;minio;mailpit
+101,lookup,Which containers expose port 3001?,uptime-kuma,,traefik;prometheus;minio
+102,lookup,Which containers expose port 3100?,loki,,minio;mailpit;ollama
+103,lookup,Which containers expose port 5432?,postgres,,grafana;minio;loki
+104,lookup,Which containers expose port 6001?,coolify,,nextcloud;ollama;uptime-kuma
+105,lookup,Which containers expose port 6379?,redis,,nextcloud;ollama;loki
+106,lookup,Which containers expose port 8000?,coolify,,redis;postgres;minio
+107,lookup,Which containers expose port 8025?,mailpit,,minio;loki;postgres
+108,lookup,Which containers expose port 8080?,open-webui;nextcloud,,prometheus;traefik;mailpit
+109,lookup,Which containers expose port 8081?,vaultwarden,,coolify;minio;nextcloud
+110,lookup,Which containers expose port 9000?,minio,,grafana;mailpit;gitea
+111,lookup,Which containers expose port 9001?,minio,,vaultwarden;nextcloud;gitea
+112,lookup,Which containers expose port 9090?,prometheus,,gitea;grafana;minio
+113,lookup,Which containers expose port 11434?,ollama,,mailpit;coolify;nextcloud
+114,lookup,Which ports are public?,80;443;3000;3001;8000;8080;8081;9001,,6001;5432;6379;9090;3100;11434;9000;8025;1025
+115,count,How many ports are public?,,10;ten,
+116,count,How many containers are running?,,12;twelve,
+117,count,How many containers are stopped?,,3;three,
+118,count,How many hosts are there?,,5;five,
+119,count,How many containers are there?,,15;fifteen,
+120,list,List all stopped containers.,loki;gitea;mailpit,,redis;coolify;vaultwarden
+121,list,List all hosts.,pve-node1;pve-node2;senku02;nas01;edge01,,
+122,two-hop,Which hosts run the containers that coolify depends on?,pve-node1,,senku02;nas01
+123,two-hop,Which hosts run the containers that grafana depends on?,pve-node2,,pve-node1;edge01
+124,two-hop,Which hosts run the containers that loki depends on?,nas01,,edge01;pve-node2
+125,two-hop,Which hosts run the containers that open-webui depends on?,senku02,,pve-node2;pve-node1
+126,two-hop,Which hosts run the containers that nextcloud depends on?,nas01;pve-node1,,edge01;pve-node2
+127,two-hop,Which hosts run the containers that gitea depends on?,pve-node1,,senku02;edge01
+128,two-hop,Which other containers run on the same host as coolify?,postgres;redis,,vaultwarden;uptime-kuma;gitea
+129,two-hop,Which other containers run on the same host as postgres?,coolify;redis,,loki;uptime-kuma;grafana
+130,two-hop,Which other containers run on the same host as redis?,coolify;postgres,,open-webui;minio;prometheus
+131,two-hop,Which other containers run on the same host as grafana?,prometheus;loki,,open-webui;redis;postgres
+132,two-hop,Which other containers run on the same host as prometheus?,grafana;loki,,ollama;traefik;open-webui
+133,two-hop,Which other containers run on the same host as loki?,grafana;prometheus,,mailpit;redis;coolify
+134,two-hop,Which other containers run on the same host as ollama?,open-webui,,grafana;vaultwarden;gitea
+135,two-hop,Which other containers run on the same host as open-webui?,ollama,,prometheus;gitea;mailpit
+136,two-hop,Which other containers run on the same host as minio?,nextcloud;gitea,,traefik;open-webui;uptime-kuma
+137,two-hop,Which other containers run on the same host as nextcloud?,minio;gitea,,loki;open-webui;coolify
+138,two-hop,Which other containers run on the same host as gitea?,minio;nextcloud,,redis;ollama;mailpit
+139,two-hop,Which other containers run on the same host as traefik?,vaultwarden;uptime-kuma;mailpit,,postgres;gitea;loki
+140,two-hop,Which other containers run on the same host as vaultwarden?,traefik;uptime-kuma;mailpit,,ollama;minio;gitea
+141,two-hop,Which other containers run on the same host as uptime-kuma?,traefik;vaultwarden;mailpit,,open-webui;minio;nextcloud
+142,two-hop,Which other containers run on the same host as mailpit?,traefik;vaultwarden;uptime-kuma,,prometheus;grafana;postgres
+143,two-hop,Which containers depend on a container that runs on pve-node1?,coolify;gitea;nextcloud,,mailpit;ollama;redis
+144,two-hop,Which containers depend on a container that runs on pve-node2?,grafana,,postgres;redis;uptime-kuma
+145,two-hop,Which containers depend on a container that runs on senku02?,open-webui,,gitea;grafana;loki
+146,two-hop,Which containers depend on a container that runs on nas01?,loki;nextcloud,,prometheus;grafana;coolify
+147,two-hop,Which port does the container that gitea depends on expose?,5432,,11434;6001;6379
+148,two-hop,Which port does the container that loki depends on expose?,9000;9001,,443;6379;8025
+149,two-hop,Which port does the container that open-webui depends on expose?,11434,,9090;1025;9001
+150,negative,Which container exposes port 9999?,,no;none;not;nothing,coolify;vaultwarden;loki
+151,negative,Which containers run on host pve-node9?,,no;none;not;nothing,postgres;nextcloud;minio
+152,negative,Which containers depend on mailpit?,,no;none;not;nothing,nextcloud;grafana;minio
+153,vague,Tell me about the grafana container.,,grafana/grafana;pve-node2;3000,
+154,vague,Tell me about the minio container.,,minio/minio;nas01;9000;9001,
+155,vague,Tell me about the nextcloud container.,,nextcloud;nas01;8080,
+156,vague,Tell me about the traefik container.,,traefik;edge01;80;443,
+157,vague,Tell me about the mailpit container.,,axllent/mailpit;edge01;8025;1025,

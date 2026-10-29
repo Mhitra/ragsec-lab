@@ -106,7 +106,7 @@ def neo4j_session():
     def val(key, default=None):
         v = env_value(key, default)
         return v.strip().strip("\"'") if v else v
-    uri = val("NEO4J_URI")
+    uri = val("PROBE_NEO4J_URI") or val("NEO4J_URI")
     user = val("NEO4J_USERNAME") or val("NEO4J_USER", "neo4j")
     pwd = val("NEO4J_PASSWORD")
     database = val("NEO4J_DATABASE", "neo4j")

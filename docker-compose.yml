@@ -3,6 +3,7 @@ services:
     build: ./app
     container_name: ragsec-api
     env_file: .env
+    restart: on-failure   # the local Neo4j needs ~30 s to start; the app retries until it is up
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
@@ -16,11 +17,37 @@ services:
     container_name: ragsec-neo4j
     environment:
       NEO4J_AUTH: neo4j/${NEO4J_PASSWORD}
+      # LangChain's Neo4jGraph needs APOC (Aura ships it). The image downloads it on first start.
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted: "apoc.*"
+      NEO4J_dbms_security_procedures_allowlist: "apoc.*"
     ports:
       - "127.0.0.1:7474:7474"
       - "127.0.0.1:7687:7687"
     volumes:
       - neo4j_data:/data
 
+  # Experiment 18 (rbac/README.md): Enterprise Edition, needed for custom roles and DENY privileges.
+  # Evaluation use only. Read the Neo4j licence terms yourself before the first start: the variable below
+  # accepts the evaluation licence when the container runs. Start it with:
+  #   docker compose --profile enterprise up -d neo4j-enterprise
+  # It listens on host ports 7475/7688 so that it can run next to the Community container.
+  neo4j-enterprise:
+    profiles: ["enterprise"]
+    image: neo4j:5-enterprise
+    container_name: ragsec-neo4j-ee
+    environment:
+      NEO4J_ACCEPT_LICENSE_AGREEMENT: "eval"
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD}
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted: "apoc.*"
+      NEO4J_dbms_security_procedures_allowlist: "apoc.*"
+    ports:
+      - "127.0.0.1:7475:7474"
+      - "127.0.0.1:7688:7687"
+    volumes:
+      - neo4j_ee_data:/data
+
 volumes:
   neo4j_data:
+  neo4j_ee_data:

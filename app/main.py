@@ -22,7 +22,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_neo4j import GraphCypherQAChain, Neo4jGraph
 from langchain_ollama import ChatOllama
 
-from guard import QueryBlocked, validate
+from guard import GUARD_VERSION, QueryBlocked, validate
 
 
 def flag(name: str) -> bool:
@@ -66,10 +66,12 @@ graph = GuardedGraph(
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:3b")
 # Some models reject the reasoning parameter. OLLAMA_REASONING=unset leaves it out (default: reasoning off).
 REASONING = None if os.environ.get("OLLAMA_REASONING", "off").strip().lower() == "unset" else False
+# Experiment 17 samples at temperature > 0. The default stays 0, as in Experiments 0-14.
+OLLAMA_TEMPERATURE = float(os.environ.get("OLLAMA_TEMPERATURE", "0") or 0)
 llm = ChatOllama(
     base_url=os.environ["OLLAMA_BASE_URL"],
     model=OLLAMA_MODEL,
-    temperature=0,
+    temperature=OLLAMA_TEMPERATURE,
     reasoning=REASONING,
 )
 
@@ -153,12 +155,18 @@ def index():
 
 @app.get("/health")
 def health():
-    return {"ok": True, "model": OLLAMA_MODEL, "protections": {**PROTECTIONS, "label_rule": USE_LABEL_RULE, "fewshot": USE_FEWSHOT}}
+    return {"ok": True, "model": OLLAMA_MODEL, "temperature": OLLAMA_TEMPERATURE, "guard_version": GUARD_VERSION, "protections": {**PROTECTIONS, "label_rule": USE_LABEL_RULE, "fewshot": USE_FEWSHOT}}
+
+SEED_FILES = {"small": "seed.cypher", "large": "seed_large.cypher"}
+
 
 @app.post("/seed")
-def seed():
-    """Runs seed.cypher. It deletes everything first: use a dedicated lab database only."""
-    with open("seed.cypher", encoding="utf-8") as f:
+def seed(graph_name: str = "small"):
+    """Runs a seed file (?graph_name=small, default, or ?graph_name=large). It deletes everything first:
+    use a dedicated lab database only."""
+    if graph_name not in SEED_FILES:
+        return {"error": f"unknown graph, use one of {list(SEED_FILES)}"}
+    with open(SEED_FILES[graph_name], encoding="utf-8") as f:
         statements = [s.strip() for s in f.read().split(";") if s.strip()]
     for s in statements:
         graph.query(s)

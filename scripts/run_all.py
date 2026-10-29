@@ -11,6 +11,8 @@ Usage (repo root, Docker Desktop and Ollama running):
   python scripts/run_all.py none fewshot                   only the named settings (re-runs them even if recorded)
   python scripts/run_all.py --model qwen3.5:9b             same, with another Ollama model (must be pulled)
   python scripts/run_all.py --set heldout none fewshot     held-out question set (results/heldout.csv)
+  python scripts/run_all.py --set large none fewshot       larger graph, 157 questions (results/large.csv); the graph of each
+                                                           question set is reseeded before its run (--no-seed to skip)
   python scripts/run_all.py --summary [--set heldout]      print the tables for results recorded so far
 Results are labelled by setting and model. Rows recorded before the model column existed count as qwen3.5:4b.
 """
@@ -52,8 +54,10 @@ URL = "http://localhost:8000"
 DEFAULT_MODEL = "qwen3.5:4b"  # model of every row recorded before the model column existed
 FIELDS = ["time", "label", "model", "protections", "id", "type", "question", "correct", "blocked", "answer", "cypher"]
 SETS = {
-    "extended": {"csv": os.path.join("results", "extended.csv"), "questions": None},
-    "heldout": {"csv": os.path.join("results", "heldout.csv"), "questions": os.path.join("questions", "questions_heldout.csv")},
+    "extended": {"csv": os.path.join("results", "extended.csv"), "questions": None, "graph": "small"},
+    "heldout": {"csv": os.path.join("results", "heldout.csv"), "questions": os.path.join("questions", "questions_heldout.csv"), "graph": "small"},
+    # Experiment 17: larger graph (python scripts/gen_large.py writes app/seed_large.cypher and the questions)
+    "large": {"csv": os.path.join("results", "large.csv"), "questions": os.path.join("questions", "questions_large.csv"), "graph": "large"},
 }
 
 
@@ -61,6 +65,13 @@ def call(path, payload=None):
     data = json.dumps(payload).encode() if payload is not None else None
     req = urllib.request.Request(URL + path, data=data, headers={"content-type": "application/json"})
     with urllib.request.urlopen(req, timeout=180) as r:
+        return json.load(r)
+
+
+def seed_graph(name):
+    """Load the small or the large graph through the app's /seed endpoint (it deletes everything first)."""
+    req = urllib.request.Request(URL + f"/seed?graph_name={name}", data=b"", method="POST")
+    with urllib.request.urlopen(req, timeout=300) as r:
         return json.load(r)
 
 
@@ -263,6 +274,7 @@ def main():
     ap.add_argument("--set", dest="qset", choices=list(SETS), default="extended", help="question set")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--summary", action="store_true")
+    ap.add_argument("--no-seed", action="store_true", help="do not reseed the graph that belongs to the question set")
     args = ap.parse_args()
     csv_path = SETS[args.qset]["csv"]
     if args.summary:
@@ -294,6 +306,8 @@ def main():
             print("App reports:", health)
             if health.get("model") != model:
                 raise SystemExit(f"The app reports model {health.get('model')!r}, expected {model!r}. Stopping.")
+            if not args.no_seed:
+                print("Seeded:", args.qset, "->", SETS[args.qset]["graph"], seed_graph(SETS[args.qset]["graph"]))
             run(label, model, questions, csv_path)
     finally:
         if not dry:
